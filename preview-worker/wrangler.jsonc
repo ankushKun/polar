@@ -9,5 +9,8 @@
   },
   "vars": {
     "PORTAL_SUBDOMAIN_BASE": "polar.ankush.one"
-  }
+  },
+  "routes": [
+    { "pattern": "*.polar.ankush.one/*", "zone_name": "ankush.one" }
+  ]
 }
