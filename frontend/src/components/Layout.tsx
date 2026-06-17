@@ -20,7 +20,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <div className="min-h-screen flex flex-col max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <header className="flex items-center justify-between py-6 border-b border-border mb-8">
           <div className="flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-2.5 text-xl font-bold text-text hover:text-white transition-colors">
+            <Link to="/" className="flex items-center gap-2.5 text-xl font-bold text-text hover:text-primary transition-colors">
               <img src="/PolarSvg.svg" alt="" className="w-7 h-7" draggable={false} />
               <span className="tracking-tight">Polar</span>
             </Link>
@@ -35,7 +35,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
-              <div className="flex items-center gap-3 bg-surface px-3 py-1.5 rounded-full border border-border">
+              <div className="flex items-center gap-3 bg-backgroundSubtle px-3 py-1.5 rounded-full">
                 <div className="w-2 h-2 rounded-full bg-success" />
                 <span className="text-sm font-medium text-textMuted">
                   {githubLogin ?? 'GitHub'}
@@ -77,8 +77,8 @@ function NavLink({ to, children }: { to: string; children: ReactNode }) {
       className={cn(
         'px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-[25px] pb-[23px]',
         isActive
-          ? 'text-white border-primary'
-          : 'text-textMuted border-transparent hover:text-white',
+          ? 'text-text border-primary'
+          : 'text-textMuted border-transparent hover:text-text',
       )}
     >
       {children}

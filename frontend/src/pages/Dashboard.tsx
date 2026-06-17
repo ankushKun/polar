@@ -2,10 +2,11 @@ import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { listDeployments, type Deployment } from '../lib/api'
-import { encodeRepoUrl, repoDisplay } from '../lib/repos'
+import { encodeRepoUrl, repoName } from '../lib/repos'
 import { getWalrusStorageStatus, shouldShowPipelineStatusBadge, storageStatusPriority } from '../lib/epochs'
 import { WalrusStorageStatusBadge } from '../components/WalrusStorageStatusBadge'
 import { DeploymentStatusBadge } from '../components/DeploymentStatusBadge'
+import { StatPill } from '../components/StatPill'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { MetadataRow } from '../components/MetadataRow'
@@ -58,7 +59,7 @@ export default function Dashboard() {
       const storageStatus = live ? getWalrusStorageStatus(live).status : 'unknown'
       result.push({
         repoUrl,
-        name: repoDisplay(repoUrl),
+        name: repoName(repoUrl),
         deployments: deps,
         latest: deps[0] || null,
         live,
@@ -109,9 +110,9 @@ export default function Dashboard() {
           <p className="text-textMuted font-medium">Loading projects...</p>
         </div>
       ) : projects.length === 0 ? (
-        <div className="border border-dashed border-border rounded-xl flex flex-col items-center justify-center py-24 px-4 bg-surface/30">
+        <div className="border border-dashed border-border rounded-xl flex flex-col items-center justify-center py-24 px-4 bg-backgroundSubtle/50">
           <Box className="w-12 h-12 text-textMuted mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">No projects yet</h3>
+          <h3 className="text-lg font-semibold text-text mb-2">No projects yet</h3>
           <p className="text-textMuted mb-6 text-center max-w-sm">
             You haven&apos;t deployed any projects yet. Connect your GitHub and ship your first site.
           </p>
@@ -133,17 +134,18 @@ export default function Dashboard() {
             const failedCount = project.deployments.filter((d) => d.status === 'failed').length
             const preview = live ?? latest
             const previewUrl = preview?.base36Url
+            const showTotalPill = total !== liveCount + failedCount
 
             return (
               <Link
                 key={project.repoUrl}
                 to={`/projects/${encodeRepoUrl(project.repoUrl)}`}
-                className="group block p-5 bg-surface rounded-xl border border-border hover:border-primary/40 transition-all"
+                className="group block p-5 bg-surface rounded-xl shadow-sm hover:shadow-md hover:bg-surface/90 transition-all"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex flex-col gap-3 min-w-0 flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-base font-semibold text-white group-hover:text-primary transition-colors">
+                      <span className="text-base font-semibold text-text group-hover:text-primary transition-colors">
                         {project.name}
                       </span>
                       {showLatestStatusBadge && latest && (
@@ -164,43 +166,35 @@ export default function Dashboard() {
                       />
                     )}
 
-                    <div className="flex items-center gap-2 flex-wrap text-xs">
-                      <span className="bg-background px-2 py-0.5 rounded border border-border text-textMuted">
-                        {total} deploy{total !== 1 ? 's' : ''}
-                      </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {showTotalPill && (
+                        <StatPill variant="neutral">
+                          {total} deploy{total !== 1 ? 's' : ''}
+                        </StatPill>
+                      )}
                       {liveCount > 0 && (
-                        <span className="bg-success/10 text-success px-2 py-0.5 rounded border border-success/20">
+                        <StatPill variant="live">
                           {liveCount} live
-                        </span>
+                        </StatPill>
                       )}
                       {failedCount > 0 && (
-                        <span className="bg-danger/10 text-danger px-2 py-0.5 rounded border border-danger/20">
+                        <StatPill variant="failed">
                           {failedCount} failed
-                        </span>
+                        </StatPill>
                       )}
                     </div>
 
                     {previewUrl && preview && (
-                      <div className="flex flex-col gap-1">
-                        <PreviewUrlLink
-                          base36Url={previewUrl}
-                          network={preview.network}
-                          viewUrl={preview.viewUrl}
-                        />
-                        {liveStorage?.status === 'expired' && (
-                          <span className="text-xs text-danger">Walrus storage likely expired — renew to restore</span>
-                        )}
-                        {liveStorage?.status === 'expiring_soon' && liveStorage.daysRemaining != null && (
-                          <span className="text-xs text-warning">
-                            Storage expires in ~{Math.ceil(liveStorage.daysRemaining)} day
-                            {Math.ceil(liveStorage.daysRemaining) === 1 ? '' : 's'}
-                          </span>
-                        )}
-                      </div>
+                      <PreviewUrlLink
+                        base36Url={previewUrl}
+                        network={preview.network}
+                        viewUrl={preview.viewUrl}
+                        projectName={project.name}
+                      />
                     )}
                   </div>
 
-                  <ChevronRight className="w-5 h-5 text-textMuted group-hover:text-white transition-colors shrink-0" />
+                  <ChevronRight className="w-5 h-5 text-textMuted group-hover:text-text transition-colors shrink-0" />
                 </div>
               </Link>
             )

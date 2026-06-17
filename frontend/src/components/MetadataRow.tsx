@@ -29,9 +29,14 @@ export function MetadataRow({
         </div>
       )}
       {commitSha !== undefined && (
-        <div className="flex items-center gap-1.5" title={commitTitleProp || undefined}>
-          <Hash className="w-3.5 h-3.5" />
-          {shortSha(commitSha)}
+        <div className="flex items-center gap-1.5 min-w-0 max-w-full">
+          <Hash className="w-3.5 h-3.5 shrink-0" />
+          <span className="shrink-0">{shortSha(commitSha)}</span>
+          {commitTitleProp && (
+            <span className="truncate max-w-[12rem] text-textMuted/80" title={commitTitleProp}>
+              {commitTitleProp}
+            </span>
+          )}
         </div>
       )}
       {network && (

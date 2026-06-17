@@ -9,7 +9,6 @@ import {
   type WalrusStorageStatusResult,
 } from '../lib/epochs'
 import type { Deployment } from '../lib/api'
-import { portalViewLabel } from '../lib/portal'
 import { Button } from './ui/Button'
 import { Spinner } from './ui/Spinner'
 import { RefreshCcw, ChevronDown, ChevronUp } from 'lucide-react'
@@ -124,8 +123,6 @@ export function WalrusRenewActions({
 
 export function WalrusStorageAlert({
   storage,
-  base36Url,
-  network,
   disabled,
   renewing,
   onRenew,
@@ -143,8 +140,6 @@ export function WalrusStorageAlert({
   if (!storage.endDate) return null
 
   const endLabel = formatStorageEndLabel(storage.endDate)
-  const urlLabel =
-    base36Url && network ? portalViewLabel(base36Url, network) : 'your Polar site URL'
   const daysLeft =
     storage.daysRemaining != null && storage.daysRemaining > 0
       ? Math.ceil(storage.daysRemaining)
@@ -156,8 +151,8 @@ export function WalrusStorageAlert({
     <div
       className={
         isExpired
-          ? 'rounded-xl border border-danger/30 bg-danger/10 p-4'
-          : 'rounded-xl border border-warning/30 bg-warning/10 p-4'
+          ? 'rounded-xl bg-danger/10 p-4'
+          : 'rounded-xl bg-warning/10 p-4'
       }
     >
       <div className={`text-sm font-semibold ${isExpired ? 'text-danger' : 'text-warning'}`}>
@@ -166,13 +161,12 @@ export function WalrusStorageAlert({
       <p className="mt-2 text-sm text-textMuted leading-relaxed">
         {isExpired ? (
           <>
-            The <span className="font-mono text-white/90">{urlLabel}</span> site may be unreachable.
-            Renewing will rebuild and re-upload to the{' '}
-            <span className="font-medium text-white/90">same Walrus Site object</span>, so your URL should stay the same.
+            Your live site may be unreachable. Renewing will rebuild and re-upload to the{' '}
+            <span className="font-medium text-text">same Walrus Site object</span>, so your URL should stay the same.
           </>
         ) : (
           <>
-            Storage expires around <span className="text-white font-medium">{endLabel}</span>
+            Storage expires around <span className="text-text font-medium">{endLabel}</span>
             {daysLeft != null ? ` (${daysLeft} day${daysLeft === 1 ? '' : 's'} left)` : ''}.
             Renew before then to avoid downtime.
           </>
@@ -196,11 +190,11 @@ export function WalrusStorageAlert({
 export function liveUrlBorderClass(status: WalrusStorageStatus): string {
   switch (status) {
     case 'expired':
-      return 'bg-danger/10 border-danger/30'
+      return 'bg-danger/10'
     case 'expiring_soon':
-      return 'bg-warning/10 border-warning/30'
+      return 'bg-warning/10'
     default:
-      return 'bg-success/10 border-success/30'
+      return 'bg-[#276ce4]/15'
   }
 }
 

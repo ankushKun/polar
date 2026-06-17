@@ -15,11 +15,11 @@ export function Breadcrumbs({ items, className }: { items: BreadcrumbItem[]; cla
         <span key={i} className="flex items-center gap-2 min-w-0">
           {i > 0 && <span className="text-border">/</span>}
           {item.to ? (
-            <Link to={item.to} className="hover:text-white transition-colors truncate max-w-[150px]">
+            <Link to={item.to} className="hover:text-text transition-colors truncate max-w-[150px]">
               {item.label}
             </Link>
           ) : (
-            <span className="text-white truncate max-w-[150px]">{item.label}</span>
+            <span className="text-text truncate max-w-[150px]">{item.label}</span>
           )}
         </span>
       ))}

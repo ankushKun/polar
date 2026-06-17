@@ -30,7 +30,7 @@ export function DeploymentStatusBadge({
 }) {
   const s = getDeploymentStatus(status)
   return (
-    <Badge variant={s.color} className={`gap-1.5 uppercase tracking-wider text-[10px] ${className ?? ''}`}>
+    <Badge variant={s.color} className={`gap-1.5 normal-case font-medium ${className ?? ''}`}>
       {s.icon} {s.label}
     </Badge>
   )

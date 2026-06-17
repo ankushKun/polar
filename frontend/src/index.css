@@ -13,19 +13,19 @@
 
 @layer base {
   :root {
-    --color-background: #080c12;
-    --color-background-subtle: #0a1018;
-    --color-surface: #0f1419;
-    --color-border: #1e2630;
-    --color-primary: #3b9eff;
-    --color-primary-hover: #5eb0ff;
-    --color-text: #e6edf3;
-    --color-text-muted: #8b949e;
-    --color-danger: #f85149;
-    --color-warning: #d29922;
-    --color-success: #3fb950;
-    --color-info: #58a6ff;
-    --color-accent: #1a2838;
+    --color-background: #2b313f;
+    --color-background-subtle: #252a36;
+    --color-surface: #343b4a;
+    --color-border: rgba(74, 85, 104, 0.4);
+    --color-primary: #1d56cf;
+    --color-primary-hover: #276ce4;
+    --color-text: #fdf9f2;
+    --color-text-muted: #a8b8d4;
+    --color-danger: #e8a598;
+    --color-warning: #d4b896;
+    --color-success: #7eb3ff;
+    --color-info: #7eb3ff;
+    --color-accent: rgba(87, 140, 203, 0.2);
     --color-landing: #050b14;
   }
 
@@ -42,7 +42,7 @@
 
 @layer utilities {
   .app-gradient {
-    background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 158, 255, 0.06), transparent);
+    background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(39, 108, 228, 0.08), transparent);
   }
 
   .animate-pulse-fast {

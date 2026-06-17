@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { getDeployment, deleteDeployment, retryDeployment, redeployDeployment, getToken, type Deployment, type Project, listProjects } from '../lib/api'
-import { encodeRepoUrl, repoDisplay } from '../lib/repos'
+import { encodeRepoUrl, repoName } from '../lib/repos'
 import { portalViewUrl } from '../lib/portal'
 import { renderAnsiLogs } from '../lib/ansi'
 import { useSSE } from '../hooks/useSSE'
@@ -215,7 +215,7 @@ export default function DeploymentDetail() {
       <div className="flex items-center gap-4">
         <Link 
           to="/dashboard" 
-          className="p-2 -ml-2 rounded-lg hover:bg-surface text-textMuted hover:text-white transition-colors"
+          className="p-2 -ml-2 rounded-lg hover:bg-surface text-textMuted hover:text-text transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
@@ -223,7 +223,7 @@ export default function DeploymentDetail() {
           className="mb-0"
           items={[
             { label: 'Dashboard', to: '/dashboard' },
-            { label: repoDisplay(d.repoUrl), to: `/projects/${encodeRepoUrl(d.repoUrl)}` },
+            { label: repoName(d.repoUrl), to: `/projects/${encodeRepoUrl(d.repoUrl)}` },
             { label: d.id.slice(0, 8) },
           ]}
         />
@@ -238,9 +238,9 @@ export default function DeploymentDetail() {
             <div className="p-6">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white mb-2 flex items-center gap-3">
+                  <h1 className="text-2xl font-bold tracking-tight text-text mb-2 flex items-center gap-3">
                     <GithubIcon className="w-6 h-6" />
-                    {repoDisplay(d.repoUrl)}
+                    {repoName(d.repoUrl)}
                   </h1>
                   <div className="flex items-center gap-4 text-sm text-textMuted">
                     <span className="flex items-center gap-1.5"><GitBranch className="w-4 h-4" /> {d.branch}</span>
@@ -278,6 +278,7 @@ export default function DeploymentDetail() {
                     viewUrl={d.viewUrl}
                     storageStatus={storage?.status ?? 'active'}
                     title={needsStorageRenew ? 'Site URL' : undefined}
+                    projectName={repoName(d.repoUrl)}
                   />
                 </div>
               )}

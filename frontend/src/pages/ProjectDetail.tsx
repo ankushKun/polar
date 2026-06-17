@@ -19,6 +19,8 @@ import {
   type GithubCommit,
 } from '../lib/api'
 import { decodeRepoUrl, repoDisplay, encodeRepoUrl, repoOwner, repoName as repoNameFromUrl } from '../lib/repos'
+import { shortHash } from '../lib/format'
+import { CopyButton } from '../components/CopyButton'
 import {
   walrusRetentionCalendarDays,
   MAINNET_DAYS_PER_EPOCH,
@@ -37,7 +39,6 @@ import { PreviewUrlLink } from '../components/PreviewUrlLink'
 import { MetadataRow } from '../components/MetadataRow'
 import {
   WalrusStorageAlert,
-  WalrusRenewActions,
 } from '../components/WalrusStorageAlert'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -48,7 +49,7 @@ import { Tabs } from '../components/ui/Tabs'
 import { Spinner } from '../components/ui/Spinner'
 import {
   ArrowLeft, ExternalLink, GitBranch, Globe, Terminal,
-  Clock, Calendar, AlertCircle, XCircle,
+  Clock, AlertCircle, XCircle,
   Hash, FolderOutput, Code2, Database, Trash2,
   KeyRound, Plus, RefreshCcw, Upload, ChevronRight
 } from 'lucide-react'
@@ -127,7 +128,7 @@ export default function ProjectDetail() {
   const [importingSecrets, setImportingSecrets] = useState(false)
 
   const repoUrl = decodeRepoUrl(encodedRepo || '')
-  const repoName = repoDisplay(repoUrl)
+  const repoName = repoNameFromUrl(repoUrl)
   const importPreview = useMemo(() => {
     try {
       return { names: parseSecretNames(importText), error: null as string | null }
@@ -394,10 +395,10 @@ export default function ProjectDetail() {
     const est = liveDeployment.epochs == null
     const cardBorder =
       liveStorage.status === 'expired'
-        ? 'border-danger/40'
+        ? 'bg-danger/5'
         : liveStorage.status === 'expiring_soon'
-          ? 'border-warning/40'
-          : 'border-border'
+          ? 'bg-warning/5'
+          : ''
 
     walrusRetentionOverview = (
       <Card className={cardBorder}>
@@ -421,7 +422,7 @@ export default function ProjectDetail() {
             </p>
           )}
           {liveStorage.status === 'active' && (
-            <p className="text-sm text-white leading-relaxed">
+            <p className="text-sm text-text leading-relaxed">
               The live site is stored in Walrus for roughly{' '}
               <span className="font-semibold text-info">{days} calendar days</span>
               {liveDeployment.network === 'mainnet' ? (
@@ -436,32 +437,28 @@ export default function ProjectDetail() {
             {liveStorage.status === 'active' ? (
               <>
                 That points to about{' '}
-                <span className="text-white font-medium">{endLabel}</span>
+                <span className="text-text font-medium">{endLabel}</span>
               </>
             ) : (
-              <>Original retention window ended around <span className="text-white font-medium">{endLabel}</span>.</>
+              <>Original retention window ended around <span className="text-text font-medium">{endLabel}</span>.</>
             )}
             <span className="block mt-2 text-xs opacity-80">
               Walrus follows Sui epochs; this is a calendar guide from your deploy time, not a guaranteed on-chain timestamp.
             </span>
           </p>
-          {showStorageRenew && renewTarget && (
-            <WalrusRenewActions
-              deployment={renewTarget}
-              disabled={hasActiveDeployment}
-              renewing={renewingSite}
-              onRenew={(epochs) => handleRenewSite(renewTarget.id, epochs)}
-            />
-          )}
         </CardContent>
       </Card>
     )
   }
 
+  const showStorageBadge =
+    liveStorage &&
+    (liveStorage.status === 'expired' || liveStorage.status === 'expiring_soon')
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link to="/dashboard" className="p-2 -ml-2 rounded-lg hover:bg-surface text-textMuted hover:text-white transition-colors">
+        <Link to="/dashboard" className="p-2 -ml-2 rounded-lg hover:bg-surface text-textMuted hover:text-text transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <Breadcrumbs className="mb-0" items={[
@@ -473,7 +470,7 @@ export default function ProjectDetail() {
       {/* Project Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
+          <h1 className="text-2xl font-bold tracking-tight text-text flex items-center gap-3">
             {repoName}
           </h1>
           <a
@@ -485,11 +482,11 @@ export default function ProjectDetail() {
           </a>
         </div>
         <div className="flex items-center gap-3">
-          {showLatestStatusBadge && latest && (
-            <DeploymentStatusBadge status={latest.status} className="text-sm py-1 px-3" />
-          )}
-          {liveStorage && (
+          {showStorageBadge && liveStorage && (
             <WalrusStorageStatusBadge status={liveStorage.status} className="text-sm py-1 px-3" />
+          )}
+          {!showStorageBadge && showLatestStatusBadge && latest && (
+            <DeploymentStatusBadge status={latest.status} className="text-sm py-1 px-3" />
           )}
           {showUpdateDeployment && (
             <Button variant="primary" onClick={handleDeployLatest} disabled={deployingLatest} size="sm">
@@ -511,23 +508,21 @@ export default function ProjectDetail() {
         <Card className="border-border">
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Latest Deployment</h2>
+              <h2 className="text-lg font-semibold text-text">Latest Deployment</h2>
               <Link to={`/deployments/${latest.id}`}>
                 <Button variant="secondary" size="sm">View Details</Button>
               </Link>
             </div>
 
-            <div className="flex items-center gap-4 text-sm text-textMuted mb-4">
-              <span className="flex items-center gap-1.5"><GitBranch className="w-4 h-4" /> {latest.branch}</span>
-              <span className="flex items-center gap-1.5" title={latest.commitMessage || undefined}>
-                <Hash className="w-4 h-4" /> {shortSha(latest.commitSha)}
-              </span>
-              <span className="flex items-center gap-1.5"><Globe className="w-4 h-4" /> {latest.network === 'testnet' ? 'Testnet' : 'Mainnet'}</span>
-              <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /> {new Date(latest.createdAt).toLocaleString()}</span>
-            </div>
+            <MetadataRow
+              commitSha={latest.commitSha}
+              commitTitle={latest.commitMessage}
+              createdAt={latest.createdAt}
+              className="mb-4 text-sm"
+            />
 
             {showUpdateDeployment && (
-              <div className="mb-4 rounded-xl border border-warning/30 bg-warning/10 p-4">
+              <div className="mb-4 rounded-xl bg-warning/10 p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-warning">
@@ -547,7 +542,7 @@ export default function ProjectDetail() {
             )}
 
             {!showUpdateDeployment && latest.commitSha && branchHead?.sha === latest.commitSha && !hasActiveDeployment && (
-              <div className="mb-4 rounded-lg border border-success/20 bg-success/5 px-3 py-2 text-xs text-success">
+              <div className="mb-4 rounded-lg bg-[#276ce4]/10 px-3 py-2 text-xs text-success">
                 Latest deployment matches {project.branch} at {shortSha(branchHead.sha)}.
               </div>
             )}
@@ -562,8 +557,6 @@ export default function ProjectDetail() {
               <div className="mb-4">
                 <WalrusStorageAlert
                   storage={liveStorage}
-                  base36Url={renewTarget.base36Url}
-                  network={renewTarget.network}
                   disabled={hasActiveDeployment}
                   renewing={renewingSite}
                   deployment={renewTarget}
@@ -578,11 +571,18 @@ export default function ProjectDetail() {
                 network={latest.network}
                 viewUrl={latest.viewUrl}
                 storageStatus={liveStorage?.status ?? 'active'}
+                projectName={repoName}
               />
             )}
 
+            {latest.status === 'deployed' && latest.base36Url && (
+              <p className="mt-2 text-xs text-textMuted">
+                Preview link uses your Walrus Site ID; custom names via SuiNS coming soon.
+              </p>
+            )}
+
             {latest.error && (
-              <div className="mt-4 bg-danger/10 border border-danger/30 rounded-xl p-4">
+              <div className="mt-4 bg-danger/10 rounded-xl p-4">
                 <div className="flex items-center gap-2 text-danger font-semibold mb-1">
                   <XCircle className="w-4 h-4" /> Build Failed
                 </div>
@@ -643,18 +643,13 @@ export default function ProjectDetail() {
                   <Database className="w-4 h-4" /> Storage Details
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-4 space-y-4">
-                <div className="text-xs font-mono text-info break-all bg-info/10 p-2 rounded border border-info/20">
-                  ID: {latest.objectId}
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-2 text-xs font-mono text-info bg-info/10 px-3 py-2 rounded-lg min-w-0">
+                  <span className="truncate" title={latest.objectId}>
+                    ID: {shortHash(latest.objectId, 8, 6)}
+                  </span>
+                  <CopyButton value={latest.objectId} title="Copy object ID" />
                 </div>
-                {latest.base36Url && (
-                  <PreviewUrlLink
-                    base36Url={latest.base36Url}
-                    network={latest.network}
-                    viewUrl={latest.viewUrl}
-                    className="text-sm"
-                  />
-                )}
               </CardContent>
             </Card>
           )}
@@ -702,13 +697,14 @@ export default function ProjectDetail() {
                           base36Url={d.base36Url}
                           network={d.network}
                           viewUrl={d.viewUrl}
+                          projectName={repoName}
                         />
                       )}
                       {d.status === 'deployed' && deploymentStorage && deploymentStorage.status !== 'active' && deploymentStorage.status !== 'unknown' ? (
                         <WalrusStorageStatusBadge status={deploymentStorage.status} />
                       ) : null}
                     </div>
-                    <ChevronRight className="w-5 h-5 text-textMuted group-hover:text-white transition-colors shrink-0" />
+                    <ChevronRight className="w-5 h-5 text-textMuted group-hover:text-text transition-colors shrink-0" />
                   </div>
                 </Link>
               )

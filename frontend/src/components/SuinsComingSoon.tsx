@@ -53,7 +53,7 @@ export function SuinsComingSoon({ variant, onOpenTab, hasDeployedSite = true }: 
           {hasDeployedSite ? (
             <p className="text-sm text-textMuted leading-relaxed">
               Replace object IDs with a memorable SuiNS name and serve on{' '}
-              <span className="text-white font-medium">*.wal.app</span>. Open the SuiNS tab to see
+              <span className="text-text font-medium">*.wal.app</span>. Open the SuiNS tab to see
               what&apos;s planned.
             </p>
           ) : (
@@ -88,7 +88,7 @@ export function SuinsComingSoon({ variant, onOpenTab, hasDeployedSite = true }: 
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-info" />
-                <h2 className="text-lg font-semibold text-white">SuiNS custom names</h2>
+                <h2 className="text-lg font-semibold text-text">SuiNS custom names</h2>
                 <Badge variant="outline">Coming soon</Badge>
               </div>
               <p className="text-sm text-textMuted max-w-xl leading-relaxed">

@@ -24,7 +24,7 @@ export function EmptyState({
       <div className="w-16 h-16 bg-surface border border-border rounded-2xl flex items-center justify-center mb-6">
         {icon}
       </div>
-      <h2 className="text-2xl font-semibold text-white mb-3">{title}</h2>
+      <h2 className="text-2xl font-semibold text-text mb-3">{title}</h2>
       <p className="text-textMuted mb-8 max-w-md">{description}</p>
       {action ?? (actionLabel && onAction && (
         <Button onClick={onAction} disabled={loading} size="lg" className="px-8">

@@ -27,8 +27,8 @@ export function Tabs({
             className={cn(
               'pb-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap',
               activeId === tab.id
-                ? 'text-white border-primary'
-                : 'text-textMuted border-transparent hover:text-white',
+                ? 'text-text border-primary'
+                : 'text-textMuted border-transparent hover:text-text',
             )}
           >
             {tab.label}

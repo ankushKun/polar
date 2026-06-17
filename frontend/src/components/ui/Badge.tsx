@@ -11,14 +11,14 @@ export const Badge = forwardRef<HTMLDivElement, BadgeProps>(
       <div
         ref={ref}
         className={cn(
-          'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+          'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
           {
-            'border-transparent bg-surface text-text hover:bg-border': variant === 'default',
-            'border-transparent bg-success/20 text-success': variant === 'success',
-            'border-transparent bg-warning/20 text-warning': variant === 'warning',
-            'border-transparent bg-danger/20 text-danger': variant === 'danger',
-            'border-transparent bg-info/20 text-info': variant === 'info',
-            'border-border text-text': variant === 'outline',
+            'bg-backgroundSubtle text-textMuted': variant === 'default',
+            'bg-[#276ce4]/25 text-[#7eb3ff]': variant === 'success',
+            'bg-[#d4b896]/20 text-warning': variant === 'warning',
+            'bg-[#e8a598]/20 text-danger': variant === 'danger',
+            'bg-[#276ce4]/20 text-info': variant === 'info',
+            'bg-[#d0c5f4]/20 text-[#c5d4f0]': variant === 'outline',
           },
           className
         )}

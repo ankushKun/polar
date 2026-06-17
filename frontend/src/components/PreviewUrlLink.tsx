@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { ExternalLink, Copy, Check } from 'lucide-react'
-import { portalViewLabel, portalViewUrl } from '../lib/portal'
+import { ExternalLink } from 'lucide-react'
+import { portalDisplayLabel, portalTechnicalLabel, portalViewUrl } from '../lib/portal'
+import { CopyButton } from './CopyButton'
 import { cn } from '../lib/utils'
 
 export function PreviewUrlLink({
@@ -9,50 +9,42 @@ export function PreviewUrlLink({
   viewUrl,
   className,
   showCopy = true,
+  projectName,
+  showTechnical = false,
 }: {
   base36Url: string
   network: 'mainnet' | 'testnet'
   viewUrl?: string | null
   className?: string
   showCopy?: boolean
+  projectName?: string
+  showTechnical?: boolean
 }) {
   const href = viewUrl ?? portalViewUrl(base36Url, network)
-  const label = portalViewLabel(base36Url, network)
-  const [copied, setCopied] = useState(false)
-
-  async function handleCopy(e: React.MouseEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    try {
-      await navigator.clipboard.writeText(href)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      /* ignore */
-    }
-  }
+  const displayLabel = portalDisplayLabel(base36Url, network, { projectName })
+  const technicalLabel = portalTechnicalLabel(base36Url, network)
+  const hasFriendlyName = projectName && displayLabel !== technicalLabel
 
   return (
-    <span className={cn('inline-flex items-center gap-2 min-w-0', className)}>
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center gap-1.5 text-info text-xs hover:text-info/80 transition-colors min-w-0"
-      >
-        <ExternalLink className="w-3 h-3 shrink-0" />
-        <span className="font-mono truncate">{label}</span>
-      </a>
-      {showCopy && (
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="p-1 rounded text-textMuted hover:text-white transition-colors shrink-0"
-          title="Copy URL"
+    <span className={cn('inline-flex flex-col gap-0.5 min-w-0 max-w-full', className)}>
+      <span className="inline-flex items-center gap-2 min-w-0">
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1.5 text-info text-xs hover:text-info/80 transition-colors min-w-0"
+          title={href}
         >
-          {copied ? <Check className="w-3 h-3 text-success" /> : <Copy className="w-3 h-3" />}
-        </button>
+          <ExternalLink className="w-3 h-3 shrink-0" />
+          <span className="truncate">{displayLabel}</span>
+        </a>
+        {showCopy && <CopyButton value={href} title="Copy full URL" onClick={(e) => e.stopPropagation()} />}
+      </span>
+      {(showTechnical || hasFriendlyName) && (
+        <span className="text-[10px] text-textMuted font-mono truncate pl-5" title={href}>
+          {technicalLabel}
+        </span>
       )}
     </span>
   )

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { FlaskConical, Globe } from 'lucide-react'
+import { CopyButton } from './CopyButton'
+import { shortHash } from '../lib/format'
 
 interface WalletInfo {
   address: string | null
@@ -15,10 +17,6 @@ function fmtMist(balance: string): string {
   if (n < 1) return n.toFixed(3)
   if (n < 1000) return n.toFixed(2)
   return n.toLocaleString('en-US', { maximumFractionDigits: 0 })
-}
-
-function shortAddr(addr: string): string {
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`
 }
 
 export default function WalletFooter() {
@@ -41,35 +39,38 @@ export default function WalletFooter() {
   if (!info || !info.address) return null
 
   return (
-    <footer className="mt-12 py-4 border-t border-border text-xs text-textMuted flex flex-wrap gap-6 items-center justify-center">
-      <span className="text-textMuted font-medium">Deploy wallet</span>
-      <a
-        href={`https://suiscan.xyz/testnet/account/${info.address}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-info font-mono hover:text-info/80 transition-colors"
-        title={info.address}
-      >
-        {shortAddr(info.address)}
-      </a>
+    <footer className="mt-12 py-4 border-t border-border text-sm text-textMuted flex flex-wrap gap-6 items-center justify-center">
+      <span className="font-medium">Deploy wallet</span>
+      <span className="inline-flex items-center gap-1.5">
+        <a
+          href={`https://suiscan.xyz/testnet/account/${info.address}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-info font-mono hover:text-info/80 transition-colors"
+          title={info.address}
+        >
+          {shortHash(info.address, 6, 4)}
+        </a>
+        <CopyButton value={info.address} title="Copy wallet address" />
+      </span>
 
       <span className="text-border hidden sm:inline">|</span>
 
       <span className="inline-flex items-center gap-2">
-        <FlaskConical className="w-3.5 h-3.5 text-warning" />
-        <span>{fmtMist(info.testnet.sui)} SUI</span>
+        <FlaskConical className="w-4 h-4 text-warning" />
+        <span className="text-text">{fmtMist(info.testnet.sui)} SUI</span>
         {Number(info.testnet.wal) > 0 && (
-          <span className="text-textMuted">{fmtMist(info.testnet.wal)} WAL</span>
+          <span>{fmtMist(info.testnet.wal)} WAL</span>
         )}
       </span>
 
       <span className="text-border hidden sm:inline">|</span>
 
       <span className="inline-flex items-center gap-2">
-        <Globe className="w-3.5 h-3.5 text-success" />
-        <span>{fmtMist(info.mainnet.sui)} SUI</span>
+        <Globe className="w-4 h-4 text-success" />
+        <span className="text-text">{fmtMist(info.mainnet.sui)} SUI</span>
         {Number(info.mainnet.wal) > 0 && (
-          <span className="text-textMuted">{fmtMist(info.mainnet.wal)} WAL</span>
+          <span>{fmtMist(info.mainnet.wal)} WAL</span>
         )}
       </span>
     </footer>
