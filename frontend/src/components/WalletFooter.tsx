@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { FlaskConical, Globe } from 'lucide-react'
 import { CopyButton } from './CopyButton'
 import { shortHash } from '../lib/format'
+import { LandingFooter } from './landing/LandingFooter'
 
 interface WalletInfo {
   address: string | null
@@ -19,42 +20,11 @@ function fmtMist(balance: string): string {
   return n.toLocaleString('en-US', { maximumFractionDigits: 0 })
 }
 
-export default function WalletFooter() {
-  const [info, setInfo] = useState<WalletInfo | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    const fetchWallet = () => {
-      const base = import.meta.env.VITE_API_BASE || '/api'
-      fetch(`${base}/wallet?t=${Date.now()}`)
-        .then((r) => r.json())
-        .then((d) => { if (!cancelled) setInfo(d) })
-        .catch(() => {})
-    }
-    fetchWallet()
-    const i = setInterval(fetchWallet, 30000)
-    return () => { cancelled = true; clearInterval(i) }
-  }, [])
-
-  if (!info || !info.address) {
-    return (
-      <footer className="mt-auto pt-8 pb-12 border-t border-divider text-xs text-textMuted text-center">
-        <a href="/" className="hover:text-text transition-colors">Polar</a>
-        <span className="mx-2 text-border">·</span>
-        <a
-          href="https://github.com/ankushKun/polar"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-text transition-colors"
-        >
-          GitHub
-        </a>
-      </footer>
-    )
-  }
+function DeployWalletBar({ info }: { info: WalletInfo }) {
+  if (!info.address) return null
 
   return (
-    <footer className="mt-auto pt-8 pb-12 border-t border-divider text-sm text-textMuted flex flex-wrap gap-6 items-center justify-center">
+    <div className="border-t border-divider bg-backgroundSubtle/50 py-4 text-sm text-textMuted flex flex-wrap gap-6 items-center justify-center">
       <span className="font-medium">Deploy wallet</span>
       <span className="inline-flex items-center gap-1.5">
         <a
@@ -88,6 +58,31 @@ export default function WalletFooter() {
           <span>{fmtMist(info.mainnet.wal)} WAL</span>
         )}
       </span>
-    </footer>
+    </div>
+  )
+}
+
+export default function WalletFooter() {
+  const [info, setInfo] = useState<WalletInfo | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const fetchWallet = () => {
+      const base = import.meta.env.VITE_API_BASE || '/api'
+      fetch(`${base}/wallet?t=${Date.now()}`)
+        .then((r) => r.json())
+        .then((d) => { if (!cancelled) setInfo(d) })
+        .catch(() => {})
+    }
+    fetchWallet()
+    const i = setInterval(fetchWallet, 30000)
+    return () => { cancelled = true; clearInterval(i) }
+  }, [])
+
+  return (
+    <div className="mt-auto w-full">
+      {info?.address && <DeployWalletBar info={info} />}
+      <LandingFooter />
+    </div>
   )
 }

@@ -17,7 +17,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col relative">
       <div className="app-gradient fixed inset-0 pointer-events-none -z-10" aria-hidden />
-      <div className="min-h-screen flex flex-col max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      <div className="flex-1 flex flex-col max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <header className="flex items-center justify-between py-6 border-b border-divider mb-8">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2.5 text-xl font-bold text-text hover:text-primary transition-colors">
@@ -74,9 +74,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         </header>
 
         <main className="flex-1 w-full pb-10">{children}</main>
-
-        <WalletFooter />
       </div>
+
+      <WalletFooter />
     </div>
   )
 }
