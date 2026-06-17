@@ -39,7 +39,7 @@ function resolveFrontendBase(env: Env): string | null {
   return u ? trimSlash(u) : null
 }
 
-// GET /api/github/login — start OAuth (no auth); returns { url }
+// GET /api/github/login - start OAuth (no auth); returns { url }
 router.get('/login', async (c) => {
   const clientId = c.env.GITHUB_CLIENT_ID
   if (!clientId) {
@@ -64,7 +64,7 @@ router.get('/login', async (c) => {
   return c.json({ url })
 })
 
-// GET /api/github/callback — GitHub redirects here; issues session JWT + stores token
+// GET /api/github/callback - GitHub redirects here; issues session JWT + stores token
 router.get('/callback', async (c) => {
   const frontend = resolveFrontendBase(c.env)
   const redirectWithHash = (fragment: string) => {
@@ -116,7 +116,7 @@ router.get('/callback', async (c) => {
   }
 })
 
-// GET /api/github/status — check if user has GitHub linked (always true after login; useful for token row)
+// GET /api/github/status - check if user has GitHub linked (always true after login; useful for token row)
 router.get('/status', async (c) => {
   const authHeader = c.req.header('Authorization')
   if (!authHeader?.startsWith('Bearer ')) {
@@ -141,7 +141,7 @@ router.get('/status', async (c) => {
   })
 })
 
-// GET /api/github/repos — list user's repositories
+// GET /api/github/repos - list user's repositories
 router.get('/repos', async (c) => {
   const authHeader = c.req.header('Authorization')
   if (!authHeader?.startsWith('Bearer ')) {
@@ -169,7 +169,7 @@ router.get('/repos', async (c) => {
   return c.json({ repos })
 })
 
-// GET /api/github/repos/:owner/:repo/contents — list repo contents
+// GET /api/github/repos/:owner/:repo/contents - list repo contents
 router.get('/repos/:owner/:repo/contents', async (c) => {
   const authHeader = c.req.header('Authorization')
   if (!authHeader?.startsWith('Bearer ')) {
@@ -199,7 +199,7 @@ router.get('/repos/:owner/:repo/contents', async (c) => {
   return c.json({ contents })
 })
 
-// GET /api/github/repos/:owner/:repo/commits — recent commits for branch picker
+// GET /api/github/repos/:owner/:repo/commits - recent commits for branch picker
 router.get('/repos/:owner/:repo/commits', async (c) => {
   const authHeader = c.req.header('Authorization')
   if (!authHeader?.startsWith('Bearer ')) {
@@ -228,7 +228,7 @@ router.get('/repos/:owner/:repo/commits', async (c) => {
   return c.json({ commits })
 })
 
-// POST /api/github/repos/:owner/:repo/detect — deep scan for deployable projects
+// POST /api/github/repos/:owner/:repo/detect - deep scan for deployable projects
 router.post('/repos/:owner/:repo/detect', async (c) => {
   const authHeader = c.req.header('Authorization')
   if (!authHeader?.startsWith('Bearer ')) {
@@ -259,7 +259,7 @@ router.post('/repos/:owner/:repo/detect', async (c) => {
   return c.json({ projects })
 })
 
-// GET /api/github/repos/:owner/:repo/branches — list branches (for webhook config)
+// GET /api/github/repos/:owner/:repo/branches - list branches (for webhook config)
 router.get('/repos/:owner/:repo/branches', async (c) => {
   const authHeader = c.req.header('Authorization')
   if (!authHeader?.startsWith('Bearer ')) {
@@ -303,7 +303,7 @@ router.get('/repos/:owner/:repo/branches', async (c) => {
   return c.json({ branches: branches.map((b) => b.name) })
 })
 
-// POST /api/github/repos/detect-frameworks — batch quick framework detection
+// POST /api/github/repos/detect-frameworks - batch quick framework detection
 router.post('/repos/detect-frameworks', async (c) => {
   const authHeader = c.req.header('Authorization')
   if (!authHeader?.startsWith('Bearer ')) {

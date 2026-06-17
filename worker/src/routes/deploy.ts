@@ -345,7 +345,7 @@ router.post('/deploy', async (c) => {
         framework = detected.framework
       }
     } catch {
-      // Detection failed — will retry post-clone in container
+      // Detection failed - will retry post-clone in container
     }
   }
 
@@ -688,7 +688,7 @@ router.post('/deployments/:id/redeploy', async (c) => {
   return c.json({ id: redeployId, status: 'queued' }, 202)
 })
 
-// GET /api/deployments/:id/logs — SSE live log stream
+// GET /api/deployments/:id/logs - SSE live log stream
 router.get('/deployments/:id/logs', async (c) => {
   const db = getDb(c)
 

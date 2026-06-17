@@ -29,7 +29,7 @@ export async function handlePortalRequest(
   return serveSiteResource(objectId, network, parsed.sitePath, portalPrefix)
 }
 
-/** Subdomain portal: {base36}.polar.example.com — network auto-detected from chain. */
+/** Subdomain portal: {base36}.polar.example.com - network auto-detected from chain. */
 export async function handleSubdomainPortalRequest(
   c: PortalRequestContext,
   base36: string,

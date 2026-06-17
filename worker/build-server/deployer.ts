@@ -141,7 +141,7 @@ async function rpcCall<T>(url: string, method: string, params: unknown[]): Promi
 /**
  * Site-builder `deploy` reads a Sui **gas budget** cap from `gas_budget` under each context’s
  * `general` section in `sites-config.yaml` (site-builder 2.9+; the old `--gas-budget` CLI flag
- * is not accepted on `deploy`). That cap is not Walrus storage payment — storage is WAL.
+ * is not accepted on `deploy`). That cap is not Walrus storage payment - storage is WAL.
  * Smaller sites use a lower cap so modest SUI balances work.
  * See https://docs.wal.app/docs/sites/getting-started/using-the-site-builder
  */
@@ -334,14 +334,14 @@ async function ensureFunds(
   let balances: { sui: bigint; wal: bigint }
   try {
     balances = await getBalances(suiAddress, rpcUrl, logs)
-    logs.push(`Balances — SUI: ${balances.sui} MIST, WAL: ${balances.wal} FROST`)
+    logs.push(`Balances - SUI: ${balances.sui} MIST, WAL: ${balances.wal} FROST`)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'unknown'
     logs.push(`Balance check failed: ${msg}`)
     return { sufficient: true } // optimistic
   }
 
-  const MIN_SUI_FOR_GAS = 50_000_000n // 0.05 SUI — small headroom beyond gas budget (e.g. get-wal)
+  const MIN_SUI_FOR_GAS = 50_000_000n // 0.05 SUI - small headroom beyond gas budget (e.g. get-wal)
   const suiFloor = gasBudgetMist > MIN_SUI_FOR_GAS ? gasBudgetMist : MIN_SUI_FOR_GAS
   logs.push(`Deploy gas budget cap (sites-config gas_budget): ${gasBudgetMist} MIST (~${(Number(gasBudgetMist) / 1e9).toFixed(4)} SUI)`)
 
@@ -363,7 +363,7 @@ async function ensureFunds(
     }
   }
 
-  // Testnet — attempt SUI → WAL exchange (leave deploy gas budget + small buffer)
+  // Testnet - attempt SUI → WAL exchange (leave deploy gas budget + small buffer)
   const suiReserve = gasBudgetMist + MIN_SUI_FOR_GAS
   if (balances.sui <= suiReserve) {
     return {
@@ -397,7 +397,7 @@ async function ensureFunds(
   // Verify post-exchange
   try {
     const newBalances = await getBalances(suiAddress, rpcUrl, logs)
-    logs.push(`Post-exchange — SUI: ${newBalances.sui} MIST, WAL: ${newBalances.wal} FROST`)
+    logs.push(`Post-exchange - SUI: ${newBalances.sui} MIST, WAL: ${newBalances.wal} FROST`)
 
     if (newBalances.wal >= requiredWal) {
       const g1 = assertSuiCoversGasBudget(newBalances.sui, suiFloor, suiAddress)
@@ -413,7 +413,7 @@ async function ensureFunds(
       const second = await exchangeSuiForWal(remainingSui, walrusBin, network, env, logs)
       if (second.success) {
         const finalBalances = await getBalances(suiAddress, rpcUrl, logs)
-        logs.push(`Final — SUI: ${finalBalances.sui} MIST, WAL: ${finalBalances.wal} FROST`)
+        logs.push(`Final - SUI: ${finalBalances.sui} MIST, WAL: ${finalBalances.wal} FROST`)
         if (finalBalances.wal >= requiredWal) {
           const g2 = assertSuiCoversGasBudget(finalBalances.sui, suiFloor, suiAddress)
           if (!g2.ok) return { sufficient: false, error: g2.error }

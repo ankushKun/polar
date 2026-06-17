@@ -79,7 +79,7 @@ export default function DeploymentDetail() {
     },
     onDone: () => {
       setSseDone(true)
-      // Refresh final state from D1 with retries — worker may still be writing logs
+      // Refresh final state from D1 with retries; worker may still be writing logs
       if (id) {
         let attempts = 0
         const fetchWithRetry = async () => {
@@ -286,7 +286,7 @@ export default function DeploymentDetail() {
 
               {/* Error Box */}
               {d.error && (
-                <div className="mt-6 bg-danger/10 border border-danger/30 rounded-xl p-5">
+                <div className="mt-6 bg-danger/10 border border-danger/15 rounded-xl p-5">
                   <div className="flex items-center gap-2 text-danger font-semibold mb-2">
                     <XCircle className="w-5 h-5" /> Build Failed
                   </div>
@@ -345,7 +345,7 @@ export default function DeploymentDetail() {
             <div className="flex-1 flex flex-col min-h-0">
               {d.status === 'building' && (
                 <div className="mx-4 mt-4 mb-0 rounded-lg border border-border bg-surface/80 px-3 py-2 text-xs text-textMuted leading-relaxed">
-                  Vite may print a green “modules transformed” line before chunking and minify finish — that is not the end of the build.
+                  Vite may print a green “modules transformed” line before chunking and minify finish. That is not the end of the build.
                   Logs can pause for a while; <span className="text-white/90">Updated at</span> should still advance while the worker is polling.
                 </div>
               )}
@@ -428,7 +428,7 @@ export default function DeploymentDetail() {
                       <h4 className="text-xs font-semibold uppercase tracking-wider text-textMuted">Storage Details</h4>
                       {storage && <WalrusStorageStatusBadge status={storage.status} />}
                     </div>
-                    <div className="text-xs font-mono text-info break-all bg-info/10 p-2 rounded border border-info/20">
+                    <div className="text-xs font-mono text-info break-all bg-info/10 p-2 rounded border border-info/12">
                       ID: {d.objectId}
                     </div>
                     {storage && storage.endDate && d.status === 'deployed' && (

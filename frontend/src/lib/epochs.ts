@@ -116,7 +116,7 @@ export function getWalrusStorageStatus(
   return { status: 'active', endDate, daysRemaining, effectiveEpochs }
 }
 
-/** Hide pipeline "Live" when Walrus storage has expired — storage state reflects reachability. */
+/** Hide pipeline "Live" when Walrus storage has expired; storage state reflects reachability. */
 export function shouldShowPipelineStatusBadge(
   pipelineStatus: string,
   storageStatus: WalrusStorageStatus | null | undefined,

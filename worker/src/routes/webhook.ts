@@ -132,7 +132,7 @@ router.post('/github', async (c) => {
       outputDir = detected.outputDir
     }
   } catch {
-    // Detection failed — will retry post-clone
+    // Detection failed - will retry post-clone
   }
 
   const projectId = await upsertProject(db, {

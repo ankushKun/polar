@@ -10,7 +10,7 @@ export type PreviewWorkerEnv = {
 }
 
 /**
- * Polar preview worker — Walrus Sites portal.
+ * Polar preview worker - Walrus Sites portal.
  *
  * Primary: {base36}.polar.ankush.one (network auto-detected from chain)
  * Legacy:  /m/{id}/ mainnet, /t/{id}/ testnet on workers.dev

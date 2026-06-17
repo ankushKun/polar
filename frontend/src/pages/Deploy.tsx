@@ -173,7 +173,7 @@ export default function Deploy() {
   }, [envText])
   const envNames = useMemo(() => Object.keys(parsedEnv.values).sort(), [parsedEnv.values])
 
-  // Init — check GitHub connection (token from OAuth hash is applied in useAuth)
+  // Init: check GitHub connection (token from OAuth hash is applied in useAuth)
   useEffect(() => {
     if (!isAuthenticated) return
     void loadStatus()
@@ -499,7 +499,7 @@ export default function Deploy() {
                         onClick={() => selectRepo(repo)}
                         className={cn(
                           "w-full text-left px-4 py-3 flex items-center justify-between transition-colors hover:bg-surface",
-                          isSelected && "bg-surface border-l-2 border-l-primary"
+                          isSelected && "bg-surface border-l-2 border-l-primary/35"
                         )}
                       >
                         <div className="flex items-center gap-3 overflow-hidden">
@@ -545,7 +545,7 @@ export default function Deploy() {
       {selectedRepo && (
         <div className="w-full lg:w-[420px] lg:flex-shrink-0 space-y-6">
           
-          <Card className="overflow-hidden border-border border-l-2 border-l-primary/50">
+          <Card className="overflow-hidden border-border border-l-2 border-l-primary/25">
             <div className="p-4 bg-accent/50 border-b border-divider flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary">
                 <Rocket className="w-4 h-4" />
@@ -566,7 +566,7 @@ export default function Deploy() {
               )}
 
               {detectError && (
-                <div className="text-sm text-danger bg-danger/10 p-3 rounded-lg border border-danger/20">
+                <div className="text-sm text-danger bg-danger/10 p-3 rounded-lg border border-danger/12">
                   {detectError}
                 </div>
               )}
@@ -583,8 +583,8 @@ export default function Deploy() {
                         className={cn(
                           "text-left p-3 rounded-lg border transition-all",
                           selectedFolder === p.folder 
-                            ? "bg-info/10 border-info text-white" 
-                            : "bg-surface border-border hover:border-info/50"
+                            ? "bg-info/10 border-info/30 text-white" 
+                            : "bg-surface border-border hover:border-info/25"
                         )}
                       >
                         <div className="flex items-center gap-2 font-medium text-sm mb-1">
@@ -678,7 +678,7 @@ export default function Deploy() {
                       <option value="">Recent commits on {branch || 'branch'}</option>
                       {commits.map((commit) => (
                         <option key={commit.sha} value={commit.sha}>
-                          {shortSha(commit.sha)} — {commitTitle(commit.message)}
+                          {shortSha(commit.sha)} · {commitTitle(commit.message)}
                         </option>
                       ))}
                     </select>
@@ -787,7 +787,7 @@ export default function Deploy() {
                     const file = e.dataTransfer.files[0]
                     if (file) void handleEnvFile(file)
                   }}
-                  className="block rounded-lg border border-dashed border-border bg-surface/40 p-3 hover:border-info/60 transition-colors cursor-pointer"
+                  className="block rounded-lg border border-dashed border-border bg-surface/40 p-3 hover:border-info/25 transition-colors cursor-pointer"
                 >
                   <input
                     type="file"
@@ -829,7 +829,7 @@ export default function Deploy() {
               </div>
 
               {error && (
-                <div className="text-sm text-danger bg-danger/10 p-3 rounded-lg border border-danger/20 flex items-start gap-2">
+                <div className="text-sm text-danger bg-danger/10 p-3 rounded-lg border border-danger/12 flex items-start gap-2">
                   <TerminalSquare className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   {error}
                 </div>
@@ -867,7 +867,7 @@ export default function Deploy() {
                       <span className="text-textMuted">Est. SUI Gas</span>
                       <span className="font-semibold text-info">~{estimate.estimatedSuiGas} SUI</span>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-info/20 text-xs text-textMuted font-mono text-center">
+                    <div className="mt-3 pt-3 border-t border-info/12 text-xs text-textMuted font-mono text-center">
                       <button
                         type="button"
                         onClick={() => {
@@ -889,7 +889,7 @@ export default function Deploy() {
                   <div className="bg-surface border-b border-divider px-3 py-2 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-xs font-medium text-textMuted">
                       <Terminal className="w-3.5 h-3.5" />
-                      Cost estimate — build output
+                      Cost estimate: build output
                     </div>
                     {estimating && (
                       <Badge variant="warning" className="gap-1.5 normal-case text-[10px]">

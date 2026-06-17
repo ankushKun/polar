@@ -14,7 +14,7 @@ API_PUBLIC_URL=http://127.0.0.1:8787
 # Local UI preview without GitHub OAuth (never set in production wrangler.jsonc)
 DEV_AUTH_BYPASS=true
 
-# Optional — deployment preview worker (personal CF account)
+# Optional - deployment preview worker (personal CF account)
 # PORTAL_PUBLIC_ORIGIN=https://polar.ankush.one
 # PORTAL_SUBDOMAIN_BASE=polar.ankush.one
 # SUI_KEYSTORE=

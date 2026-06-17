@@ -24,8 +24,8 @@ export function SuinsComingSoon({ variant, onOpenTab, hasDeployedSite = true }: 
     return (
       <Card
         className={cn(
-          'border-border/80',
-          hasDeployedSite && onOpenTab && 'cursor-pointer hover:border-primary/40 transition-colors',
+          'border-border',
+          hasDeployedSite && onOpenTab && 'cursor-pointer hover:border-border transition-colors',
         )}
         onClick={hasDeployedSite && onOpenTab ? onOpenTab : undefined}
         role={hasDeployedSite && onOpenTab ? 'button' : undefined}

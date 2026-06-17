@@ -173,7 +173,7 @@ export function WalrusStorageAlert({
         )}
       </p>
       <p className="mt-2 text-xs text-textMuted/80">
-        Dates are approximate — Walrus uses Sui epochs, not calendar time.
+        Dates are approximate. Walrus uses Sui epochs, not calendar time.
       </p>
       <div className="mt-4">
         <WalrusRenewActions

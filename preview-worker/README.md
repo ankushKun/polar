@@ -1,17 +1,17 @@
 # Polar preview worker
 
-Walrus Sites portal — serves deployed Polar sites at:
+Walrus Sites portal - serves deployed Polar sites at:
 
-- **Primary:** `https://{base36SiteId}.polar.ankush.one/` (mainnet **or** testnet — auto-detected from chain)
+- **Primary:** `https://{base36SiteId}.polar.ankush.one/` (mainnet **or** testnet - auto-detected from chain)
 - **Legacy:** `/m/{id}/` and `/t/{id}/` on workers.dev
 
-Deploy via **GitHub → Cloudflare CI/CD** (personal account). Do not deploy from CLI — see [`../AGENTS.md`](../AGENTS.md).
+Deploy via **GitHub → Cloudflare CI/CD** (personal account). Do not deploy from CLI - see [`../AGENTS.md`](../AGENTS.md).
 
 The org worker sets `PORTAL_SUBDOMAIN_BASE=polar.ankush.one` so API `viewUrl` uses subdomain links.
 
 ## Custom domain (ankush.one)
 
-Use a **scoped** wildcard — not `*.ankush.one/*` (that catches every subdomain on your domain).
+Use a **scoped** wildcard - not `*.ankush.one/*` (that catches every subdomain on your domain).
 
 | Step | Value |
 | --- | --- |
@@ -21,13 +21,13 @@ Use a **scoped** wildcard — not `*.ankush.one/*` (that catches every subdomain
 
 **Troubleshooting 404 / “site not found”**
 
-1. **DNS must exist for `*.polar.ankush.one`** — the apex custom domain `polar.ankush.one` alone is not enough. In the **ankush.one** zone add:
+1. **DNS must exist for `*.polar.ankush.one`** - the apex custom domain `polar.ankush.one` alone is not enough. In the **ankush.one** zone add:
    - Type: `AAAA`, Name: `*.polar`, Content: `100::`, Proxy: **Proxied** (orange cloud)
 2. **Route pattern** must be `*.polar.ankush.one/*` (not `*polar.ankush.one/*`).
 3. Verify: `dig @1.1.1.1 {yourSiteId}.polar.ankush.one A` should return Cloudflare IPs (not empty).
 4. Verify worker: `curl -sI https://polar.ankush.one/health` → **200**. With DNS fixed, site URLs → **200** + HTML.
 
-The portal code is working — without wildcard DNS, subdomains never reach the worker (or hit the wrong Cloudflare handler).
+The portal code is working - without wildcard DNS, subdomains never reach the worker (or hit the wrong Cloudflare handler).
 
 ```jsonc
 "vars": { "PORTAL_SUBDOMAIN_BASE": "polar.ankush.one" }
@@ -41,7 +41,7 @@ For `{base36}.polar.ankush.one`, the worker:
 2. Checks mainnet and testnet RPC in parallel for that object
 3. Serves from whichever chain has the site (same URL for both networks)
 
-No `/m/` vs `/t/` in the URL — object IDs only exist on one chain.
+No `/m/` vs `/t/` in the URL - object IDs only exist on one chain.
 
 ### CI/CD build settings
 
@@ -52,7 +52,7 @@ No `/m/` vs `/t/` in the URL — object IDs only exist on one chain.
 ## Local dev
 
 ```bash
-npm run dev   # http://localhost:8788 — use /m/ and /t/ paths locally
+npm run dev   # http://localhost:8788 - use /m/ and /t/ paths locally
 ```
 
 From repo root: `npm run dev:preview`

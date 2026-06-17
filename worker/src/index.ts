@@ -35,9 +35,9 @@ export interface Env {
   WALRUS_EPOCHS?: string
   /** Public origin for deployment preview links (separate preview worker) */
   PORTAL_PUBLIC_ORIGIN?: string
-  /** e.g. polar.ankush.one — preview URLs become https://{base36}.{host}/ */
+  /** e.g. polar.ankush.one - preview URLs become https://{base36}.{host}/ */
   PORTAL_SUBDOMAIN_BASE?: string
-  /** Local only — enables POST /api/dev/login when "true" */
+  /** Local only - enables POST /api/dev/login when "true" */
   DEV_AUTH_BYPASS?: string
 }
 

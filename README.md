@@ -1,10 +1,41 @@
 # Polar
 
-Deploy static sites from GitHub to Walrus on Sui — no wallets, no WAL, no CLI.
+Polar is a one-click deployment platform that bridges the Web2 developer experience with Web3 infrastructure.
 
-Sign in with GitHub OAuth, pick a repo, and Polar builds and deploys it to Walrus on Sui. Each deployment gets a preview URL at `https://{siteId}.polar.ankush.one/` (mainnet or testnet — auto-detected). No SuiNS name required. Think Vercel, but for Web3.
+**Live:** [polar.wal.app](https://polar.wal.app) · **Demo:** [youtu.be/abcdwxyz](https://youtu.be/abcdwxyz) · **Repo:** [github.com/ankushKun/polar](https://github.com/ankushKun/polar)
 
-**[polar.wal.app](https://polar.wal.app)** (the app itself is deployed via Polar)
+Sign in with GitHub, pick a repository, and Polar handles everything:
+
+- **Auto-detect** the framework (Next.js, Vite, Astro, Nuxt, SvelteKit, Remix, Angular, 8+ frameworks)
+- **Build** the static output with encrypted project secrets injected at runtime
+- **Verify** the output is a safe, valid static site (executable detection, size checks)
+- **Deploy to Walrus:** auto-calculate gas budget, create the Walrus Site object via [walrus-deploy](https://github.com/ankushKun/walrus-deploy)
+- **Return a live preview URL** with the Site ID, complete with SPA routing support
+
+The user never touches a Sui wallet, never buys WAL, never runs a CLI command. Everything is managed by the platform with top-tier developer experience.
+
+Polar removes the single biggest barrier to Walrus adoption: developer experience. By giving every dev a Vercel-like workflow for decentralized deployment, Polar turns Walrus from a protocol into a platform. Any React, Vue, Svelte, or static site can go from GitHub to a permanent URL in under 60 seconds. No Web3 knowledge required.
+
+---
+
+## Key innovations
+
+### [walrus-deploy](https://github.com/ankushKun/walrus-deploy)
+
+Our custom wrapper over `site-builder`, with quality-of-life improvements and better developer experience. It powers every Walrus deploy in Polar (see [`worker/walrus-deploy/`](worker/walrus-deploy/)).
+
+- SPA auto-detection and `ws-resources.json` generation
+- MIME-type mapping and cache headers for hashed assets
+- CI wallet injection via `SUI_KEYSTORE` + `SUI_ADDRESS`
+- Dry-run mode and formatted deploy summaries with Base36 preview URLs
+
+### Cost estimation
+
+Pre-deploy builds run in the container to calculate exact WAL and SUI costs before committing. No surprise costs.
+
+### Dogfooding
+
+Polar itself is deployed via Polar with SuiNS at [polar.wal.app](https://polar.wal.app).
 
 ---
 
@@ -20,11 +51,11 @@ GitHub Repo → Cloudflare Container (build) → Walrus Site (deploy) → Polar 
            React SPA (Frontend)
 ```
 
-1. **Sign in** with GitHub OAuth — no passwords, no Sui wallet needed
-2. **Pick a repo** — Polar auto-detects framework (Next.js, Vite, Astro, Nuxt, SvelteKit, Remix, Angular, etc.) and package manager (npm, pnpm, yarn, bun)
-3. **Configure** — branch, build dir, output dir, secrets (encrypted at rest), storage duration
-4. **Deploy** — Polar clones the repo into an ephemeral Cloudflare Container, installs deps, builds, verifies the output, and publishes to Walrus
-5. **Live** — preview at `https://{siteId}.polar.ankush.one/` (network auto-detected). Optionally assign SuiNS for `{name}.wal.app`.
+1. **Sign in** with GitHub OAuth - no passwords, no Sui wallet needed
+2. **Pick a repo** - Polar auto-detects framework (Next.js, Vite, Astro, Nuxt, SvelteKit, Remix, Angular, etc.) and package manager (npm, pnpm, yarn, bun)
+3. **Configure** - branch, build dir, output dir, secrets (encrypted at rest), storage duration
+4. **Deploy** - Polar clones the repo into an ephemeral Cloudflare Container, installs deps, builds, verifies the output, and publishes to Walrus
+5. **Live** - preview at `https://{siteId}.polar.ankush.one/` (network auto-detected). Optionally assign SuiNS for `{name}.wal.app`.
 
 On push to main, webhooks auto-redeploy. Build logs stream in real-time via SSE. Every deployment is pinned to an exact Git commit SHA for verifiable provenance.
 
@@ -65,7 +96,7 @@ On push to main, webhooks auto-redeploy. Build logs stream in real-time via SSE.
 │   │   ├── builder.ts         # Clone → install → build → verify
 │   │   ├── deployer.ts        # SUI/WAL balance check → exchange → site-builder deploy
 │   │   └── detector.ts        # Filesystem-based framework detection
-│   ├── walrus-deploy/         # Git submodule: deploy wrapper for Walrus
+│   ├── walrus-deploy/         # Git submodule: [walrus-deploy](https://github.com/ankushKun/walrus-deploy) deploy wrapper
 │   ├── migrations/            # D1 SQL schema (6 migrations)
 │   └── Dockerfile             # Container image (node:22-slim + git + pnpm/yarn/bun + sui/walrus CLI)
 ```
@@ -170,7 +201,7 @@ VITE_PORTAL_SUBDOMAIN_BASE='polar.ankush.one' \
 - JWT sessions expire after 24 hours; OAuth state tokens expire after 10 minutes (anti-CSRF)
 - Project secrets are AES-256-GCM encrypted in D1, bound per user+project
 - Secret values are redacted from build logs (replaced with `[secret:NAME]`)
-- Secrets are injected during install/build only — never during clone
+- Secrets are injected during install/build only - never during clone
 - Reserved secret name prefixes blocked (`SUI_`, `CF_`, `POLAR_`, etc.)
 - Static site output is verified for dangerous file types and executable permissions
 
@@ -178,9 +209,9 @@ VITE_PORTAL_SUBDOMAIN_BASE='polar.ankush.one' \
 
 ## What's next
 
-- **Polar MCP server** — an MCP (Model Context Protocol) integration so AI coding agents (Claude Code, Cursor, Copilot) can deploy directly to Walrus from their IDE. An agent builds your app, and with one tool call it's live on-chain.
-- **Custom domains** via SuiNS — any `*.sui` name pointing to a Walrus Site object
-- **Preview deployments** — per-PR ephemeral URLs that auto-expire
+- **In-app SuiNS integration** so users can assign a Site ID to their SuiNS names without leaving Polar
+- **Agent MCP for Polar** so AI agents can deploy apps directly to Walrus, unlocking the agent economy
+- **CI/CD webhooks** for auto-deploy whenever changes are pushed to GitHub
 
 ---
 

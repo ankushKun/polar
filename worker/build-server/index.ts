@@ -7,7 +7,7 @@ import { deployToWalrus } from './deployer.js'
 
 const app = new Hono()
 
-// POST /build — start async build, returns buildId immediately
+// POST /build - start async build, returns buildId immediately
 app.post('/build', async (c) => {
   try {
     const body = await c.req.json()
@@ -24,21 +24,21 @@ app.post('/build', async (c) => {
   }
 })
 
-// GET /logs/:buildId — stream current build log
+// GET /logs/:buildId - stream current build log
 app.get('/logs/:buildId', (c) => {
   const buildId = c.req.param('buildId')
   const logs = readLogs(buildId)
   return c.json({ logs })
 })
 
-// GET /status/:buildId — get build status + result
+// GET /status/:buildId - get build status + result
 app.get('/status/:buildId', (c) => {
   const buildId = c.req.param('buildId')
   const state = readState(buildId)
   return c.json(state)
 })
 
-  // GET /stream-logs/:buildId — SSE real-time log streaming
+  // GET /stream-logs/:buildId - SSE real-time log streaming
   app.get('/stream-logs/:buildId', (c) => {
     const buildId = c.req.param('buildId')
     const logPath = join(WORKSPACE, buildId, 'log.txt')
@@ -120,7 +120,7 @@ app.get('/status/:buildId', (c) => {
     })
   })
 
-// POST /deploy — synchronous deploy
+// POST /deploy - synchronous deploy
 app.post('/deploy', async (c) => {
   try {
     const body = await c.req.json()

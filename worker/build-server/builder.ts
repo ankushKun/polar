@@ -62,7 +62,7 @@ const DANGEROUS_EXTENSIONS = new Set([
 const MAX_LOG_SIZE = 10 * 1024 * 1024 // 10MB cap on build log file
 type LogRedactor = (data: string) => string
 
-/** Mirrors worker/src/output-dir.ts — keep in sync. */
+/** Mirrors worker/src/output-dir.ts - keep in sync. */
 function coerceRelativeOutputDir(outputDir: string | null | undefined, baseDir: string): string | undefined {
   if (outputDir == null) return undefined
   const o = outputDir.trim().replace(/\\/g, '/')

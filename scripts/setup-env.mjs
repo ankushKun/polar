@@ -25,12 +25,12 @@ ensure(join(root, 'worker/.dev.vars'), () => {
   const enc = randomBytes(32).toString('base64')
   writeFileSync(
     join(root, 'worker/.dev.vars'),
-    `# Local wrangler dev secrets — not committed. See .dev.vars.example for field docs.
+    `# Local wrangler dev secrets - not committed. See .dev.vars.example for field docs.
 
 JWT_SECRET=${jwt}
 SECRETS_ENCRYPTION_KEY=${enc}
 
-# GitHub OAuth — callback http://127.0.0.1:8787/api/github/callback
+# GitHub OAuth - callback http://127.0.0.1:8787/api/github/callback
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 
@@ -50,7 +50,7 @@ DEV_AUTH_BYPASS=true
 ensure(join(root, 'frontend/.env.development'), () => {
   writeFileSync(
     join(root, 'frontend/.env.development'),
-    `# Vite dev — /api proxied to worker :8787
+    `# Vite dev - /api proxied to worker :8787
 VITE_DEV_AUTH_BYPASS=true
 VITE_DEV_MOCK_DATA=true
 `,
@@ -74,7 +74,7 @@ if (existsSync(devVars)) {
   }
   if (/^GITHUB_CLIENT_ID=\s*$/m.test(text) || /^GITHUB_CLIENT_ID=$/m.test(text)) {
     console.log('\nNext: add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to worker/.dev.vars for OAuth login.')
-    console.log('Or use Dev login (local) when DEV_AUTH_BYPASS=true — no GitHub app required.')
+    console.log('Or use Dev login (local) when DEV_AUTH_BYPASS=true - no GitHub app required.')
   }
 }
 

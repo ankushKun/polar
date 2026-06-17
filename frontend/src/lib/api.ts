@@ -40,7 +40,7 @@ export async function fetchMe(): Promise<{ user_id: string; github_login: string
   return resp.json()
 }
 
-/** Public — starts GitHub OAuth (no Bearer token). */
+/** Public: starts GitHub OAuth (no Bearer token). */
 export async function getGithubLoginUrl(): Promise<string> {
   const resp = await fetch(`${API_BASE}/github/login`)
   if (!resp.ok) {
@@ -51,7 +51,7 @@ export async function getGithubLoginUrl(): Promise<string> {
   return data.url
 }
 
-/** Local dev only — requires worker DEV_AUTH_BYPASS=true */
+/** Local dev only: requires worker DEV_AUTH_BYPASS=true */
 export async function devLogin(): Promise<string> {
   const resp = await fetch(`${API_BASE}/dev/login`, { method: 'POST' })
   if (!resp.ok) {

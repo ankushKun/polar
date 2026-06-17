@@ -1,4 +1,4 @@
-// GitHub API client — runs in Worker, calls GitHub's REST API
+// GitHub API client - runs in Worker, calls GitHub's REST API
 
 export interface GithubRepo {
   id: number
@@ -237,7 +237,7 @@ export async function detectProjects(
 
     // Check if this folder has a build script (by reading the file via contents API)
     const pkgContent = await listContents(token, owner, repo, pkg.path)
-    // listContents returns array for files too? No — for files it returns a single object.
+    // listContents returns array for files too? No - for files it returns a single object.
     // Let me use the raw API instead.
 
     // Actually, let me use the contents API differently
@@ -372,7 +372,7 @@ export async function quickDetectFramework(
     }
   }
 
-  // Check if has package.json — then it's likely a Node project (show "Static" or generic)
+  // Check if has package.json - then it's likely a Node project (show "Static" or generic)
   if (fileNames.includes('package.json')) {
     // Try to read package.json to check for React dependency
     try {

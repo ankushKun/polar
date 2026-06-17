@@ -418,7 +418,7 @@ export default function ProjectDetail() {
           )}
           {liveStorage.status === 'expiring_soon' && liveStorage.daysRemaining != null && (
             <p className="text-sm font-medium text-warning">
-              About {Math.ceil(liveStorage.daysRemaining)} day{Math.ceil(liveStorage.daysRemaining) === 1 ? '' : 's'} remaining — expires around {endLabel}.
+              About {Math.ceil(liveStorage.daysRemaining)} day{Math.ceil(liveStorage.daysRemaining) === 1 ? '' : 's'} remaining. Expires around {endLabel}.
             </p>
           )}
           {liveStorage.status === 'active' && (
@@ -675,7 +675,7 @@ export default function ProjectDetail() {
                 <Link
                   key={d.id}
                   to={`/deployments/${d.id}`}
-                  className="group block p-4 bg-surface rounded-xl border border-border hover:border-primary/40 transition-all"
+                  className="group block p-4 bg-surface rounded-xl border border-border hover:border-primary/20 transition-all"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex flex-col gap-2 min-w-0">
@@ -765,7 +765,7 @@ export default function ProjectDetail() {
                         const file = e.dataTransfer.files[0]
                         if (file) void handleImportFile(file)
                       }}
-                      className="block rounded-lg border border-dashed border-border bg-surface/40 p-3 hover:border-info/60 transition-colors cursor-pointer"
+                      className="block rounded-lg border border-dashed border-border bg-surface/40 p-3 hover:border-info/25 transition-colors cursor-pointer"
                     >
                       <input
                         type="file"
@@ -817,7 +817,7 @@ export default function ProjectDetail() {
               </div>
 
               {secretError && (
-                <div className="text-sm text-danger bg-danger/10 p-3 rounded-lg border border-danger/20">
+                <div className="text-sm text-danger bg-danger/10 p-3 rounded-lg border border-danger/12">
                   {secretError}
                 </div>
               )}
