@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { FlaskConical, Globe } from 'lucide-react'
 
 interface WalletInfo {
   address: string | null
@@ -40,40 +41,35 @@ export default function WalletFooter() {
   if (!info || !info.address) return null
 
   return (
-    <footer style={{
-      marginTop: 48, padding: '14px 0', borderTop: '1px solid #21262d',
-      fontSize: 11, color: '#484f58', display: 'flex', gap: 24,
-      flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <span style={{ color: '#8b949e', fontWeight: 500 }}>
-        Deploy Wallet
-      </span>
+    <footer className="mt-12 py-4 border-t border-border text-xs text-textMuted flex flex-wrap gap-6 items-center justify-center">
+      <span className="text-textMuted font-medium">Deploy wallet</span>
       <a
         href={`https://suiscan.xyz/testnet/account/${info.address}`}
-        target="_blank" rel="noopener noreferrer"
-        style={{ color: '#58a6ff', fontFamily: 'monospace' }}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-info font-mono hover:text-info/80 transition-colors"
         title={info.address}
       >
         {shortAddr(info.address)}
       </a>
 
-      <span style={{ color: '#30363d' }}>|</span>
+      <span className="text-border hidden sm:inline">|</span>
 
-      <span>
-        <span style={{ color: '#d29922' }}>🧪</span>{' '}
-        {fmtMist(info.testnet.sui)} SUI
+      <span className="inline-flex items-center gap-2">
+        <FlaskConical className="w-3.5 h-3.5 text-warning" />
+        <span>{fmtMist(info.testnet.sui)} SUI</span>
         {Number(info.testnet.wal) > 0 && (
-          <span style={{ marginLeft: 6 }}>{fmtMist(info.testnet.wal)} WAL</span>
+          <span className="text-textMuted">{fmtMist(info.testnet.wal)} WAL</span>
         )}
       </span>
 
-      <span style={{ color: '#30363d' }}>|</span>
+      <span className="text-border hidden sm:inline">|</span>
 
-      <span>
-        <span style={{ color: '#3fb950' }}>🌐</span>{' '}
-        {fmtMist(info.mainnet.sui)} SUI
+      <span className="inline-flex items-center gap-2">
+        <Globe className="w-3.5 h-3.5 text-success" />
+        <span>{fmtMist(info.mainnet.sui)} SUI</span>
         {Number(info.mainnet.wal) > 0 && (
-          <span style={{ marginLeft: 6 }}>{fmtMist(info.mainnet.wal)} WAL</span>
+          <span className="text-textMuted">{fmtMist(info.mainnet.wal)} WAL</span>
         )}
       </span>
     </footer>

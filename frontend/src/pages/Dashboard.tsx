@@ -2,35 +2,18 @@ import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { listDeployments, type Deployment } from '../lib/api'
-import { portalViewLabel } from '../lib/portal'
 import { encodeRepoUrl, repoDisplay } from '../lib/repos'
 import { getWalrusStorageStatus, shouldShowPipelineStatusBadge, storageStatusPriority } from '../lib/epochs'
 import { WalrusStorageStatusBadge } from '../components/WalrusStorageStatusBadge'
+import { DeploymentStatusBadge } from '../components/DeploymentStatusBadge'
+import { PageHeader } from '../components/PageHeader'
+import { EmptyState } from '../components/EmptyState'
+import { MetadataRow } from '../components/MetadataRow'
+import { PreviewUrlLink } from '../components/PreviewUrlLink'
+import { GithubIcon } from '../components/icons/GithubIcon'
 import { Button } from '../components/ui/Button'
-import { Badge } from '../components/ui/Badge'
-import { Plus, Box, GitBranch, Globe, Clock, Loader2, AlertCircle, ExternalLink, CheckCircle2, XCircle, Hash } from 'lucide-react'
-
-function GithubIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
-      <path d="M9 18c-4.51 2-5-2-7-2"/>
-    </svg>
-  )
-}
-
-const STATUS: Record<string, { color: 'success' | 'warning' | 'danger' | 'info' | 'default'; label: string; icon: React.ReactNode }> = {
-  queued:    { color: 'default', label: 'Queued', icon: <Clock className="w-3 h-3" /> },
-  building:  { color: 'warning', label: 'Building', icon: <Loader2 className="w-3 h-3 animate-spin" /> },
-  built:     { color: 'info', label: 'Built', icon: <CheckCircle2 className="w-3 h-3" /> },
-  deploying: { color: 'warning', label: 'Deploying', icon: <Loader2 className="w-3 h-3 animate-spin" /> },
-  deployed:  { color: 'success', label: 'Live', icon: <CheckCircle2 className="w-3 h-3" /> },
-  failed:    { color: 'danger', label: 'Failed', icon: <XCircle className="w-3 h-3" /> },
-}
-
-function shortSha(sha: string | null | undefined): string {
-  return sha ? sha.slice(0, 7) : 'unknown'
-}
+import { Spinner } from '../components/ui/Spinner'
+import { Plus, Box, ChevronRight } from 'lucide-react'
 
 function findLiveDeployment(deployments: Deployment[]): Deployment | undefined {
   return deployments.find((d) => d.status === 'deployed' && (d.base36Url || d.objectId))
@@ -95,37 +78,34 @@ export default function Dashboard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4">
-        <div className="w-16 h-16 bg-surface border border-border rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-          <GithubIcon className="w-8 h-8 text-primary" />
-        </div>
-        <h2 className="text-2xl font-semibold text-white mb-3">Sign in</h2>
-        <p className="text-textMuted mb-8 text-center max-w-md">
-          Sign in with GitHub to view your projects and deployments.
-        </p>
-        <Button onClick={() => void login()} disabled={isConnecting} size="lg" className="px-8 shadow-lg shadow-primary/20">
-          {isConnecting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-          {isConnecting ? 'Redirecting…' : 'Sign in with GitHub'}
-        </Button>
-      </div>
+      <EmptyState
+        icon={<GithubIcon className="w-8 h-8 text-primary" />}
+        title="Sign in"
+        description="Sign in with GitHub to view your projects and deployments."
+        actionLabel="Sign in with GitHub"
+        onAction={() => void login()}
+        loading={isConnecting}
+      />
     )
   }
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-2xl font-bold text-white tracking-tight">Projects</h2>
-        <Link to="/deploy">
-          <Button className="shadow-sm">
-            <Plus className="w-4 h-4 mr-2" />
-            New Deploy
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Projects"
+        actions={
+          <Link to="/deploy">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              New Deploy
+            </Button>
+          </Link>
+        }
+      />
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+          <Spinner className="w-8 h-8 text-primary mb-4" />
           <p className="text-textMuted font-medium">Loading projects...</p>
         </div>
       ) : projects.length === 0 ? (
@@ -136,9 +116,7 @@ export default function Dashboard() {
             You haven&apos;t deployed any projects yet. Connect your GitHub and ship your first site.
           </p>
           <Link to="/deploy">
-            <Button>
-              Deploy your first project
-            </Button>
+            <Button>Deploy your first project</Button>
           </Link>
         </div>
       ) : (
@@ -148,89 +126,81 @@ export default function Dashboard() {
             const live = project.live
             const liveStorage = live ? getWalrusStorageStatus(live) : null
             const latestStorage = latest?.status === 'deployed' ? getWalrusStorageStatus(latest) : null
-            const s = latest ? STATUS[latest.status] || STATUS.queued : STATUS.queued
             const showLatestStatusBadge =
               latest && shouldShowPipelineStatusBadge(latest.status, latestStorage?.status)
             const total = project.deployments.length
             const liveCount = project.deployments.filter((d) => d.status === 'deployed').length
             const failedCount = project.deployments.filter((d) => d.status === 'failed').length
+            const preview = live ?? latest
+            const previewUrl = preview?.base36Url
 
             return (
               <Link
                 key={project.repoUrl}
                 to={`/projects/${encodeRepoUrl(project.repoUrl)}`}
-                className="group block p-5 bg-surface rounded-xl border border-border hover:border-primary/50 transition-all hover:shadow-md"
+                className="group block p-5 bg-surface rounded-xl border border-border hover:border-primary/40 transition-all"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col gap-3 min-w-0 flex-1">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <span className="text-base font-semibold text-white group-hover:text-primary transition-colors">
                         {project.name}
                       </span>
-                      {showLatestStatusBadge && (
-                        <Badge variant={s.color} className="gap-1.5 uppercase tracking-wider text-[10px]">
-                          {s.icon} {s.label}
-                        </Badge>
+                      {showLatestStatusBadge && latest && (
+                        <DeploymentStatusBadge status={latest.status} />
                       )}
                       {liveStorage && (
                         <WalrusStorageStatusBadge status={liveStorage.status} />
                       )}
                     </div>
 
-                    <div className="flex items-center gap-4 text-xs font-medium text-textMuted">
-                      {latest && (
-                        <>
-                          <div className="flex items-center gap-1.5">
-                            <GitBranch className="w-3.5 h-3.5" />
-                            {latest.branch}
-                          </div>
-                          <div className="flex items-center gap-1.5" title={latest.commitMessage || undefined}>
-                            <Hash className="w-3.5 h-3.5" />
-                            {shortSha(latest.commitSha)}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Globe className="w-3.5 h-3.5" />
-                            {latest.network === 'testnet' ? 'Testnet' : 'Mainnet'}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5" />
-                            {new Date(latest.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        </>
+                    {latest && (
+                      <MetadataRow
+                        branch={latest.branch}
+                        commitSha={latest.commitSha}
+                        commitTitle={latest.commitMessage}
+                        network={latest.network}
+                        createdAt={latest.createdAt}
+                      />
+                    )}
+
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                      <span className="bg-background px-2 py-0.5 rounded border border-border text-textMuted">
+                        {total} deploy{total !== 1 ? 's' : ''}
+                      </span>
+                      {liveCount > 0 && (
+                        <span className="bg-success/10 text-success px-2 py-0.5 rounded border border-success/20">
+                          {liveCount} live
+                        </span>
                       )}
-                      <div className="flex items-center gap-2">
-                        <span className="bg-surface px-2 py-0.5 rounded border border-border">{total} deploy{total !== 1 ? 's' : ''}</span>
-                        {liveCount > 0 && <span className="bg-success/10 text-success px-2 py-0.5 rounded border border-success/20">{liveCount} live</span>}
-                        {failedCount > 0 && <span className="bg-danger/10 text-danger px-2 py-0.5 rounded border border-danger/20">{failedCount} failed</span>}
-                      </div>
+                      {failedCount > 0 && (
+                        <span className="bg-danger/10 text-danger px-2 py-0.5 rounded border border-danger/20">
+                          {failedCount} failed
+                        </span>
+                      )}
                     </div>
 
-                    {(live?.base36Url || latest?.base36Url) && (
+                    {previewUrl && preview && (
                       <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5 text-info text-xs">
-                          <ExternalLink className="w-3 h-3" />
-                          <span className="font-mono">
-                            {portalViewLabel(
-                              (live?.base36Url || latest?.base36Url)!,
-                              (live ?? latest)!.network,
-                            )}
-                          </span>
-                        </div>
+                        <PreviewUrlLink
+                          base36Url={previewUrl}
+                          network={preview.network}
+                          viewUrl={preview.viewUrl}
+                        />
                         {liveStorage?.status === 'expired' && (
                           <span className="text-xs text-danger">Walrus storage likely expired — renew to restore</span>
                         )}
                         {liveStorage?.status === 'expiring_soon' && liveStorage.daysRemaining != null && (
                           <span className="text-xs text-warning">
-                            Storage expires in ~{Math.ceil(liveStorage.daysRemaining)} day{Math.ceil(liveStorage.daysRemaining) === 1 ? '' : 's'}
+                            Storage expires in ~{Math.ceil(liveStorage.daysRemaining)} day
+                            {Math.ceil(liveStorage.daysRemaining) === 1 ? '' : 's'}
                           </span>
                         )}
                       </div>
                     )}
                   </div>
 
-                  <div className="text-textMuted group-hover:text-white transition-colors">
-                    <AlertCircle className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
+                  <ChevronRight className="w-5 h-5 text-textMuted group-hover:text-white transition-colors shrink-0" />
                 </div>
               </Link>
             )

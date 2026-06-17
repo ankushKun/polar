@@ -2,6 +2,7 @@ import { Globe, Link2, Sparkles, ExternalLink, ChevronRight } from 'lucide-react
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card'
 import { Badge } from './ui/Badge'
 import { Input } from './ui/Input'
+import { Label } from './ui/Label'
 import { Button } from './ui/Button'
 import { cn } from '../lib/utils'
 
@@ -108,9 +109,9 @@ export function SuinsComingSoon({ variant, onOpenTab, hasDeployedSite = true }: 
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-medium text-textMuted uppercase tracking-wider">
+              <Label uppercase={false} className="normal-case tracking-normal text-textMuted">
                 SuiNS name
-              </label>
+              </Label>
               <Input
                 value=""
                 readOnly

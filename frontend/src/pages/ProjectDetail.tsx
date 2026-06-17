@@ -18,7 +18,6 @@ import {
   type ProjectSecret,
   type GithubCommit,
 } from '../lib/api'
-import { portalViewLabel, portalViewUrl } from '../lib/portal'
 import { decodeRepoUrl, repoDisplay, encodeRepoUrl, repoOwner, repoName as repoNameFromUrl } from '../lib/repos'
 import {
   walrusRetentionCalendarDays,
@@ -30,34 +29,29 @@ import {
 } from '../lib/epochs'
 import { WalrusStorageStatusBadge } from '../components/WalrusStorageStatusBadge'
 import { SuinsComingSoon } from '../components/SuinsComingSoon'
+import { Breadcrumbs } from '../components/Breadcrumbs'
+import { DetailRow } from '../components/DetailRow'
+import { DeploymentStatusBadge } from '../components/DeploymentStatusBadge'
+import { LiveUrlCard } from '../components/LiveUrlCard'
+import { PreviewUrlLink } from '../components/PreviewUrlLink'
+import { MetadataRow } from '../components/MetadataRow'
 import {
   WalrusStorageAlert,
   WalrusRenewActions,
-  liveUrlBorderClass,
-  liveUrlTextClass,
 } from '../components/WalrusStorageAlert'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { Textarea } from '../components/ui/Textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
+import { Tabs } from '../components/ui/Tabs'
 import { Spinner } from '../components/ui/Spinner'
 import {
   ArrowLeft, ExternalLink, GitBranch, Globe, Terminal,
-  Clock, CheckCircle2, XCircle, AlertCircle, Calendar,
-  Hash, FolderOutput, Code2, Database, LayoutDashboard, Trash2,
-  KeyRound, Plus, RefreshCcw, Upload
+  Clock, Calendar, AlertCircle, XCircle,
+  Hash, FolderOutput, Code2, Database, Trash2,
+  KeyRound, Plus, RefreshCcw, Upload, ChevronRight
 } from 'lucide-react'
-import { cn } from '../lib/utils'
-
-const STATUS: Record<string, { color: 'success' | 'warning' | 'danger' | 'info' | 'default'; label: string; icon: React.ReactNode }> = {
-  queued:    { color: 'default', label: 'Queued', icon: <Clock className="w-3 h-3" /> },
-  building:  { color: 'warning', label: 'Building', icon: <Spinner className="w-3 h-3" /> },
-  built:     { color: 'info', label: 'Built', icon: <CheckCircle2 className="w-3 h-3" /> },
-  deploying: { color: 'warning', label: 'Deploying', icon: <Spinner className="w-3 h-3" /> },
-  deployed:  { color: 'success', label: 'Live', icon: <CheckCircle2 className="w-3 h-3" /> },
-  failed:    { color: 'danger', label: 'Failed', icon: <XCircle className="w-3 h-3" /> },
-}
-
 const SECRET_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/
 const RESERVED_SECRET_NAMES = new Set([
   'PATH', 'HOME', 'SHELL', 'USER', 'PWD', 'OLDPWD', 'NODE_ENV', 'CI', 'PORT', 'HOST',
@@ -373,7 +367,6 @@ export default function ProjectDetail() {
 
   const latest = deployments[0]
   const latestStorage = latest?.status === 'deployed' ? getWalrusStorageStatus(latest) : null
-  const latestStatus = latest ? STATUS[latest.status] || STATUS.queued : null
   const showLatestStatusBadge =
     latest && shouldShowPipelineStatusBadge(latest.status, latestStorage?.status)
   const branchHead = branchCommits[0] || null
@@ -467,17 +460,14 @@ export default function ProjectDetail() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      {/* Top Nav */}
       <div className="flex items-center gap-4">
         <Link to="/dashboard" className="p-2 -ml-2 rounded-lg hover:bg-surface text-textMuted hover:text-white transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="flex items-center gap-2 text-sm font-medium text-textMuted">
-          <LayoutDashboard className="w-4 h-4" />
-          <Link to="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-          <span className="text-border">/</span>
-          <span className="text-white truncate max-w-[200px]">{repoName}</span>
-        </div>
+        <Breadcrumbs className="mb-0" items={[
+          { label: 'Dashboard', to: '/dashboard' },
+          { label: repoName },
+        ]} />
       </div>
 
       {/* Project Header */}
@@ -495,10 +485,8 @@ export default function ProjectDetail() {
           </a>
         </div>
         <div className="flex items-center gap-3">
-          {showLatestStatusBadge && latestStatus && (
-            <Badge variant={latestStatus.color} className="text-sm py-1 px-3 gap-2 uppercase tracking-widest font-bold">
-              {latestStatus.icon} {latestStatus.label}
-            </Badge>
+          {showLatestStatusBadge && latest && (
+            <DeploymentStatusBadge status={latest.status} className="text-sm py-1 px-3" />
           )}
           {liveStorage && (
             <WalrusStorageStatusBadge status={liveStorage.status} className="text-sm py-1 px-3" />
@@ -585,23 +573,12 @@ export default function ProjectDetail() {
             )}
 
             {latest.status === 'deployed' && latest.base36Url && (
-              <div className={cn('rounded-xl p-4 border', liveUrlBorderClass(liveStorage?.status ?? 'active'))}>
-                <div className={cn('text-xs font-semibold uppercase tracking-wider mb-1', liveUrlTextClass(liveStorage?.status ?? 'active'))}>
-                  {liveStorage?.status === 'expired' ? 'Site URL (storage expired)' : 'Live URL'}
-                </div>
-                <a
-                  href={latest.viewUrl ?? portalViewUrl(latest.base36Url, latest.network)}
-                  target="_blank" rel="noopener noreferrer"
-                  className={cn(
-                    'group inline-flex items-center gap-2 text-lg font-bold transition-colors break-all',
-                    liveUrlTextClass(liveStorage?.status ?? 'active'),
-                    'hover:opacity-80',
-                  )}
-                >
-                  {portalViewLabel(latest.base36Url, latest.network)}
-                  <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
-                </a>
-              </div>
+              <LiveUrlCard
+                base36Url={latest.base36Url}
+                network={latest.network}
+                viewUrl={latest.viewUrl}
+                storageStatus={liveStorage?.status ?? 'active'}
+              />
             )}
 
             {latest.error && (
@@ -616,50 +593,26 @@ export default function ProjectDetail() {
         </Card>
       )}
 
-      {/* Tabs */}
-      <div className="border-b border-border">
-        <div className="flex gap-6">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={cn(
-              "pb-3 text-sm font-medium transition-colors border-b-2",
-              activeTab === 'overview' ? "text-white border-primary" : "text-textMuted border-transparent hover:text-white"
-            )}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveTab('deployments')}
-            className={cn(
-              "pb-3 text-sm font-medium transition-colors border-b-2",
-              activeTab === 'deployments' ? "text-white border-primary" : "text-textMuted border-transparent hover:text-white"
-            )}
-          >
-            Deployments ({deployments.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('secrets')}
-            className={cn(
-              "pb-3 text-sm font-medium transition-colors border-b-2",
-              activeTab === 'secrets' ? "text-white border-primary" : "text-textMuted border-transparent hover:text-white"
-            )}
-          >
-            Secrets ({secrets.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('suins')}
-            className={cn(
-              "pb-3 text-sm font-medium transition-colors border-b-2 flex items-center gap-2",
-              activeTab === 'suins' ? "text-white border-primary" : "text-textMuted border-transparent hover:text-white"
-            )}
-          >
-            SuiNS
-            <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-normal normal-case tracking-normal">
-              Soon
-            </Badge>
-          </button>
-        </div>
-      </div>
+      <Tabs
+        activeId={activeTab}
+        onChange={(id) => setActiveTab(id as Tab)}
+        tabs={[
+          { id: 'overview', label: 'Overview' },
+          { id: 'deployments', label: `Deployments (${deployments.length})` },
+          { id: 'secrets', label: `Secrets (${secrets.length})` },
+          {
+            id: 'suins',
+            label: (
+              <span className="inline-flex items-center gap-2">
+                SuiNS
+                <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-normal normal-case tracking-normal">
+                  Soon
+                </Badge>
+              </span>
+            ),
+          },
+        ]}
+      />
 
       {/* Tab Content */}
       {activeTab === 'overview' ? (
@@ -695,13 +648,12 @@ export default function ProjectDetail() {
                   ID: {latest.objectId}
                 </div>
                 {latest.base36Url && (
-                  <a
-                    href={latest.viewUrl ?? portalViewUrl(latest.base36Url, latest.network)}
-                    target="_blank" rel="noopener noreferrer"
-                    className="text-sm text-success hover:text-success/80 transition-colors flex items-center gap-1"
-                  >
-                    {portalViewLabel(latest.base36Url, latest.network)} <ExternalLink className="w-3 h-3" />
-                  </a>
+                  <PreviewUrlLink
+                    base36Url={latest.base36Url}
+                    network={latest.network}
+                    viewUrl={latest.viewUrl}
+                    className="text-sm"
+                  />
                 )}
               </CardContent>
             </Card>
@@ -722,52 +674,41 @@ export default function ProjectDetail() {
             <div className="text-center py-12 text-textMuted">No deployments for this project yet.</div>
           ) : (
             deployments.map((d) => {
-              const s = STATUS[d.status] || STATUS.queued
               const deploymentStorage = d.status === 'deployed' ? getWalrusStorageStatus(d) : null
               const showPipelineBadge = shouldShowPipelineStatusBadge(d.status, deploymentStorage?.status)
               return (
                 <Link
                   key={d.id}
                   to={`/deployments/${d.id}`}
-                  className="group block p-4 bg-surface rounded-xl border border-border hover:border-primary/50 transition-all hover:shadow-md"
+                  className="group block p-4 bg-surface rounded-xl border border-border hover:border-primary/40 transition-all"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col gap-2 min-w-0">
+                      <div className="flex items-center gap-3 flex-wrap">
                         {showPipelineBadge && (
-                          <Badge variant={s.color} className="gap-1.5 uppercase tracking-wider text-[10px]">
-                            {s.icon} {s.label}
-                          </Badge>
+                          <DeploymentStatusBadge status={d.status} />
                         )}
                         <span className="text-xs text-textMuted font-mono">{d.id.slice(0, 8)}...</span>
                       </div>
-                      <div className="flex items-center gap-4 text-xs font-medium text-textMuted">
-                        <div className="flex items-center gap-1.5">
-                          <GitBranch className="w-3.5 h-3.5" /> {d.branch}
-                        </div>
-                        <div className="flex items-center gap-1.5" title={commitTitle(d.commitMessage)}>
-                          <Hash className="w-3.5 h-3.5" /> {shortSha(d.commitSha)}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Globe className="w-3.5 h-3.5" /> {d.network === 'testnet' ? 'Testnet' : 'Mainnet'}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5" />
-                          {new Date(d.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                        {d.base36Url && (
-                          <div className="flex items-center gap-1.5 text-info ml-2 bg-info/10 px-2 py-0.5 rounded-md">
-                            <span className="font-mono">{d.base36Url}</span>
-                          </div>
-                        )}
-                        {d.status === 'deployed' && deploymentStorage && deploymentStorage.status !== 'active' && deploymentStorage.status !== 'unknown' ? (
-                          <WalrusStorageStatusBadge status={deploymentStorage.status} />
-                        ) : null}
-                      </div>
+                      <MetadataRow
+                        branch={d.branch}
+                        commitSha={d.commitSha}
+                        commitTitle={commitTitle(d.commitMessage)}
+                        network={d.network}
+                        createdAt={d.createdAt}
+                      />
+                      {d.base36Url && (
+                        <PreviewUrlLink
+                          base36Url={d.base36Url}
+                          network={d.network}
+                          viewUrl={d.viewUrl}
+                        />
+                      )}
+                      {d.status === 'deployed' && deploymentStorage && deploymentStorage.status !== 'active' && deploymentStorage.status !== 'unknown' ? (
+                        <WalrusStorageStatusBadge status={deploymentStorage.status} />
+                      ) : null}
                     </div>
-                    <div className="text-textMuted group-hover:text-white transition-colors">
-                      <ArrowLeft className="w-4 h-4 rotate-180" />
-                    </div>
+                    <ChevronRight className="w-5 h-5 text-textMuted group-hover:text-white transition-colors shrink-0" />
                   </div>
                 </Link>
               )
@@ -844,7 +785,7 @@ export default function ProjectDetail() {
                         <span>{importFileName || 'Drop an .env file or click to choose one'}</span>
                       </div>
                     </label>
-                    <textarea
+                    <Textarea
                       value={importText}
                       onChange={(e) => {
                         setImportText(e.target.value)
@@ -852,7 +793,7 @@ export default function ProjectDetail() {
                       }}
                       spellCheck={false}
                       placeholder="VITE_API_URL=https://example.com"
-                      className="w-full min-h-[112px] resize-y rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs text-white placeholder:text-textMuted focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="min-h-[112px]"
                     />
                     {importPreview.error ? (
                       <p className="text-xs text-danger">{importPreview.error}</p>
@@ -918,20 +859,6 @@ export default function ProjectDetail() {
           )}
         </div>
       )}
-    </div>
-  )
-}
-
-function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-2 text-textMuted text-sm">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <div className="text-sm font-medium text-white truncate max-w-[200px]" title={value}>
-        {value}
-      </div>
     </div>
   )
 }

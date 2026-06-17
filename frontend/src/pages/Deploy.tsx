@@ -19,18 +19,15 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Input } from '../components/ui/Input'
+import { Select } from '../components/ui/Select'
+import { Label } from '../components/ui/Label'
+import { Textarea } from '../components/ui/Textarea'
 import { Spinner } from '../components/ui/Spinner'
+import { DeploySteps } from '../components/DeploySteps'
+import { PageHeader } from '../components/PageHeader'
+import { EmptyState } from '../components/EmptyState'
+import { GithubIcon } from '../components/icons/GithubIcon'
 import { Search, Lock, Globe, Box, Settings2, ShieldCheck, ChevronDown, Rocket, FileCode2, Package, TerminalSquare, Terminal, Upload, KeyRound } from 'lucide-react'
-
-// Simple SVG for GitHub since Lucide v0.300+ removed brand icons
-function GithubIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
-      <path d="M9 18c-4.51 2-5-2-7-2"/>
-    </svg>
-  )
-}
 import { cn } from '../lib/utils'
 
 const FRAMEWORK_BADGES: Record<string, { bg: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline' }> = {
@@ -412,26 +409,27 @@ export default function Deploy() {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <ShieldCheck className="w-12 h-12 text-primary mb-4" />
-        <h2 className="text-2xl font-semibold mb-2">Sign in to deploy</h2>
-        <p className="text-textMuted mb-6 text-center max-w-md">
-          Sign in with GitHub to browse repositories and deploy to Walrus.
-        </p>
-        <Button onClick={() => void login()} size="lg">Sign in with GitHub</Button>
-      </div>
+      <EmptyState
+        icon={<ShieldCheck className="w-8 h-8 text-primary" />}
+        title="Sign in to deploy"
+        description="Sign in with GitHub to browse repositories and deploy to Walrus."
+        actionLabel="Sign in with GitHub"
+        onAction={() => void login()}
+      />
     )
   }
 
-  return (
-    <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
+  const deployStep: 1 | 2 | 3 = selectedRepo ? 2 : 1
 
-      {/* Left Column: Repo Selection & Config */}
+  return (
+    <div className="max-w-7xl mx-auto">
+      <DeploySteps activeStep={deployStep} />
+      <div className="flex flex-col lg:flex-row gap-8">
       <div className="flex-1 min-w-0 space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight mb-2">Deploy a new project</h2>
-          <p className="text-textMuted">Select a repository and configure your build settings.</p>
-        </div>
+        <PageHeader
+          title="Deploy a new project"
+          description="Select a repository and configure your build settings."
+        />
 
         {!ghConnected ? (
           <Card className="flex flex-col items-center justify-center py-16 px-4 border-dashed bg-surface/30">
@@ -465,16 +463,16 @@ export default function Deploy() {
                     className="pl-9 bg-background"
                   />
                 </div>
-                <select
+                <Select
                   value={frameworkFilter}
                   onChange={(e) => setFrameworkFilter(e.target.value)}
-                  className="h-10 px-3 bg-surface border border-border rounded-md text-sm text-textMuted focus:outline-none focus:ring-1 focus:ring-primary appearance-none flex-shrink-0"
+                  className="flex-shrink-0 w-auto min-w-[140px] bg-background"
                 >
                   <option value="">All frameworks</option>
                   {Object.keys(FRAMEWORK_BADGES).map((fw) => (
                     <option key={fw} value={fw}>{fw}</option>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
 
@@ -547,14 +545,14 @@ export default function Deploy() {
       {selectedRepo && (
         <div className="w-full lg:w-[420px] lg:flex-shrink-0 space-y-6">
           
-          <Card className="overflow-hidden border-primary/20">
-            <div className="p-4 bg-primary/10 border-b border-primary/10 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+          <Card className="overflow-hidden border-border border-l-2 border-l-primary/50">
+            <div className="p-4 bg-accent/50 border-b border-border flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary">
                 <Rocket className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-semibold text-primary">Configuration</h3>
-                <p className="text-xs text-primary/70">{selectedRepo.full_name}</p>
+                <h3 className="font-semibold text-white">Configuration</h3>
+                <p className="text-xs text-textMuted">{selectedRepo.full_name}</p>
               </div>
             </div>
 
@@ -603,29 +601,26 @@ export default function Deploy() {
                 </div>
               )}
 
-              {/* Network & Branch */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-textMuted uppercase tracking-wider">Network</label>
-                  <select 
-                    value={network} 
+                  <Label>Network</Label>
+                  <Select
+                    value={network}
                     onChange={(e) => setNetwork(e.target.value as 'mainnet' | 'testnet')}
-                    className="w-full h-10 px-3 bg-surface border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary appearance-none"
                   >
-                    <option value="testnet">🧪 Testnet</option>
-                    <option value="mainnet">🌐 Mainnet</option>
-                  </select>
+                    <option value="testnet">Testnet</option>
+                    <option value="mainnet">Mainnet</option>
+                  </Select>
+                  <p className="text-[11px] text-textMuted leading-snug">
+                    Testnet: ~1 day per epoch. Mainnet: tiered retention windows.
+                  </p>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-textMuted uppercase tracking-wider">Branch</label>
+                  <Label>Branch</Label>
                   {branches.length > 0 ? (
-                    <select 
-                      value={branch} 
-                      onChange={(e) => setBranch(e.target.value)}
-                      className="w-full h-10 px-3 bg-surface border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary appearance-none"
-                    >
+                    <Select value={branch} onChange={(e) => setBranch(e.target.value)}>
                       {branches.map((b) => <option key={b} value={b}>{b}</option>)}
-                    </select>
+                    </Select>
                   ) : (
                     <Input value={branch} onChange={(e) => setBranch(e.target.value)} />
                   )}
@@ -634,10 +629,10 @@ export default function Deploy() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
-                  <label className="text-xs font-semibold text-textMuted uppercase tracking-wider">Commit</label>
+                  <Label>Commit</Label>
                   {loadingCommits && <Spinner className="w-3.5 h-3.5 text-textMuted" />}
                 </div>
-                <select
+                <Select
                   value={commitMode}
                   onChange={(e) => {
                     setCommitMode(e.target.value as 'latest' | 'specific')
@@ -645,11 +640,10 @@ export default function Deploy() {
                     setManualCommitSha('')
                     setEstimate(null)
                   }}
-                  className="w-full h-10 px-3 bg-surface border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary appearance-none"
                 >
                   <option value="latest">Latest on {branch || 'branch'}</option>
                   <option value="specific">Specific commit</option>
-                </select>
+                </Select>
 
                 {commitMode === 'latest' ? (
                   <div className="rounded-lg border border-border bg-surface/50 px-3 py-2 text-xs text-textMuted">
@@ -809,7 +803,7 @@ export default function Deploy() {
                     <span>{envFileName || 'Drop an .env file or click to choose one'}</span>
                   </div>
                 </label>
-                <textarea
+                <Textarea
                   value={envText}
                   onChange={(e) => {
                     setEnvText(e.target.value)
@@ -817,7 +811,6 @@ export default function Deploy() {
                   }}
                   spellCheck={false}
                   placeholder="VITE_API_URL=https://example.com"
-                  className="w-full min-h-[96px] resize-y rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs text-white placeholder:text-textMuted focus:outline-none focus:ring-1 focus:ring-primary"
                 />
                 {parsedEnv.error ? (
                   <p className="text-xs text-danger">{parsedEnv.error}</p>
@@ -855,7 +848,7 @@ export default function Deploy() {
                     {estimating ? 'Calculating Cost...' : 'Calculate Storage Cost'}
                   </Button>
                 ) : (
-                  <div className="bg-[#0d1a2b] rounded-lg border border-info/30 p-4 text-sm">
+                  <div className="bg-accent rounded-lg border border-border p-4 text-sm">
                     <div className="flex justify-between mb-2">
                       <span className="text-textMuted">Output Size</span>
                       <span className="font-semibold text-white">
@@ -920,20 +913,23 @@ export default function Deploy() {
                 </div>
               )}
 
+              <div className="sticky bottom-0 pt-2 pb-1 bg-gradient-to-t from-background via-background to-transparent -mx-1 px-1">
               <Button
                 size="lg"
-                className="w-full font-bold text-base shadow-lg shadow-primary/20"
+                className="w-full font-semibold text-base"
                 onClick={handleDeploy}
                 disabled={submitting || detecting || !!parsedEnv.error || (projects.length > 1 && !selectedFolder)}
               >
                 {submitting ? <Spinner className="mr-2" /> : <Rocket className="w-5 h-5 mr-2" />}
                 {submitting ? 'Deploying...' : 'Deploy to Walrus'}
               </Button>
+              </div>
 
             </div>
           </Card>
         </div>
       )}
+      </div>
     </div>
   )
 }

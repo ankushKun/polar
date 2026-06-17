@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,16 +12,37 @@
 }
 
 @layer base {
+  :root {
+    --color-background: #080c12;
+    --color-background-subtle: #0a1018;
+    --color-surface: #0f1419;
+    --color-border: #1e2630;
+    --color-primary: #3b9eff;
+    --color-primary-hover: #5eb0ff;
+    --color-text: #e6edf3;
+    --color-text-muted: #8b949e;
+    --color-danger: #f85149;
+    --color-warning: #d29922;
+    --color-success: #3fb950;
+    --color-info: #58a6ff;
+    --color-accent: #1a2838;
+    --color-landing: #050b14;
+  }
+
   body {
     @apply bg-background text-text font-sans antialiased;
   }
 }
 
 @layer utilities {
+  .app-gradient {
+    background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 158, 255, 0.06), transparent);
+  }
+
   .animate-pulse-fast {
     animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
-  
+
   @keyframes polar-slide-up {
     from {
       transform: translateY(3%);

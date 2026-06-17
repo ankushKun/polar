@@ -2,19 +2,22 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { getDeployment, deleteDeployment, retryDeployment, redeployDeployment, getToken, type Deployment, type Project, listProjects } from '../lib/api'
-import { portalViewLabel, portalViewUrl } from '../lib/portal'
+import { encodeRepoUrl, repoDisplay } from '../lib/repos'
+import { portalViewUrl } from '../lib/portal'
 import { renderAnsiLogs } from '../lib/ansi'
 import { useSSE } from '../hooks/useSSE'
-import { encodeRepoUrl, repoDisplay } from '../lib/repos'
 import { Button } from '../components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
-import { Badge } from '../components/ui/Badge'
 import { Spinner } from '../components/ui/Spinner'
+import { Breadcrumbs } from '../components/Breadcrumbs'
+import { DetailRow } from '../components/DetailRow'
+import { DeploymentStatusBadge } from '../components/DeploymentStatusBadge'
+import { LiveUrlCard } from '../components/LiveUrlCard'
+import { GithubIcon } from '../components/icons/GithubIcon'
 import {
   ArrowLeft, ExternalLink, GitBranch, Globe, Terminal, Trash2, RotateCcw,
-  Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Hash, FolderOutput, Code2, Database, LayoutDashboard
+  XCircle, AlertCircle, Calendar, Hash, FolderOutput, Code2, Database, Clock
 } from 'lucide-react'
-import { cn } from '../lib/utils'
 import {
   getWalrusStorageStatus,
   formatStorageEndLabel,
@@ -25,27 +28,9 @@ import { WalrusStorageStatusBadge } from '../components/WalrusStorageStatusBadge
 import {
   WalrusStorageAlert,
   WalrusRenewActions,
-  liveUrlBorderClass,
-  liveUrlTextClass,
 } from '../components/WalrusStorageAlert'
 
-function GithubIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
-      <path d="M9 18c-4.51 2-5-2-7-2"/>
-    </svg>
-  )
-}
-
-const STATUS: Record<string, { color: 'success' | 'warning' | 'danger' | 'info' | 'default'; label: string; icon: React.ReactNode }> = {
-  queued:    { color: 'default', label: 'Queued', icon: <Clock className="w-3 h-3" /> },
-  building:  { color: 'warning', label: 'Building', icon: <Spinner className="w-3 h-3" /> },
-  built:     { color: 'info', label: 'Built', icon: <CheckCircle2 className="w-3 h-3" /> },
-  deploying: { color: 'warning', label: 'Deploying', icon: <Spinner className="w-3 h-3" /> },
-  deployed:  { color: 'success', label: 'Live', icon: <CheckCircle2 className="w-3 h-3" /> },
-  failed:    { color: 'danger', label: 'Failed', icon: <XCircle className="w-3 h-3" /> },
-}
+const ACTIVE_DEPLOYMENT_STATUSES = new Set(['queued', 'building', 'built', 'deploying'])
 
 function shortSha(sha: string | null | undefined): string {
   return sha ? sha.slice(0, 7) : 'unknown'
@@ -54,8 +39,6 @@ function shortSha(sha: string | null | undefined): string {
 function commitTitle(message: string | null | undefined): string {
   return (message || 'Unknown commit').split('\n')[0]
 }
-
-const ACTIVE_DEPLOYMENT_STATUSES = new Set(['queued', 'building', 'built', 'deploying'])
 
 export default function DeploymentDetail() {
   const { id } = useParams<{ id: string }>()
@@ -220,7 +203,6 @@ export default function DeploymentDetail() {
     )
   }
 
-  const s = STATUS[d.status] || STATUS.queued
   const storage = d.status === 'deployed' ? getWalrusStorageStatus(d) : null
   const showPipelineBadge = shouldShowPipelineStatusBadge(d.status, storage?.status)
   const needsStorageRenew = storage?.status === 'expired' || storage?.status === 'expiring_soon'
@@ -237,16 +219,14 @@ export default function DeploymentDetail() {
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="flex items-center gap-2 text-sm font-medium text-textMuted">
-          <LayoutDashboard className="w-4 h-4" />
-          <Link to="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-          <span className="text-border">/</span>
-          <Link to={`/projects/${encodeRepoUrl(d.repoUrl)}`} className="hover:text-white transition-colors truncate max-w-[150px]">
-            {repoDisplay(d.repoUrl)}
-          </Link>
-          <span className="text-border">/</span>
-          <span className="text-white truncate max-w-[100px]">{d.id.slice(0, 8)}</span>
-        </div>
+        <Breadcrumbs
+          className="mb-0"
+          items={[
+            { label: 'Dashboard', to: '/dashboard' },
+            { label: repoDisplay(d.repoUrl), to: `/projects/${encodeRepoUrl(d.repoUrl)}` },
+            { label: d.id.slice(0, 8) },
+          ]}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -270,9 +250,7 @@ export default function DeploymentDetail() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {showPipelineBadge && (
-                    <Badge variant={s.color} className="text-sm py-1 px-3 gap-2 uppercase tracking-widest font-bold">
-                      {s.icon} {s.label}
-                    </Badge>
+                    <DeploymentStatusBadge status={d.status} className="text-sm py-1 px-3" />
                   )}
                   {storage && <WalrusStorageStatusBadge status={storage.status} className="text-sm py-1 px-3" />}
                 </div>
@@ -292,40 +270,15 @@ export default function DeploymentDetail() {
                 </div>
               )}
 
-              {/* Success Box */}
-              {d.status === 'deployed' && d.base36Url && !needsStorageRenew && (
-                <div className={cn('mt-6 rounded-xl p-5 border', liveUrlBorderClass(storage?.status ?? 'active'))}>
-                  <div className={cn('text-xs font-semibold uppercase tracking-wider mb-2', liveUrlTextClass(storage?.status ?? 'active'))}>Live URL</div>
-                  <a
-                    href={d.viewUrl ?? portalViewUrl(d.base36Url, d.network)}
-                    target="_blank" rel="noopener noreferrer"
-                    className={cn(
-                      'group inline-flex items-center gap-2 text-xl font-bold transition-colors break-all hover:opacity-80',
-                      liveUrlTextClass(storage?.status ?? 'active'),
-                    )}
-                  >
-                    {portalViewLabel(d.base36Url, d.network)}
-                    <ExternalLink className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
-                  </a>
-                </div>
-              )}
-
-              {d.status === 'deployed' && d.base36Url && needsStorageRenew && (
-                <div className={cn('mt-6 rounded-xl p-5 border', liveUrlBorderClass(storage!.status))}>
-                  <div className={cn('text-xs font-semibold uppercase tracking-wider mb-2', liveUrlTextClass(storage!.status))}>
-                    Site URL
-                  </div>
-                  <a
-                    href={d.viewUrl ?? portalViewUrl(d.base36Url, d.network)}
-                    target="_blank" rel="noopener noreferrer"
-                    className={cn(
-                      'group inline-flex items-center gap-2 text-xl font-bold transition-colors break-all hover:opacity-80',
-                      liveUrlTextClass(storage!.status),
-                    )}
-                  >
-                    {portalViewLabel(d.base36Url, d.network)}
-                    <ExternalLink className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
-                  </a>
+              {d.status === 'deployed' && d.base36Url && (
+                <div className="mt-6">
+                  <LiveUrlCard
+                    base36Url={d.base36Url}
+                    network={d.network}
+                    viewUrl={d.viewUrl}
+                    storageStatus={storage?.status ?? 'active'}
+                    title={needsStorageRenew ? 'Site URL' : undefined}
+                  />
                 </div>
               )}
 
@@ -341,7 +294,20 @@ export default function DeploymentDetail() {
             </div>
 
             {/* Quick Actions Footer */}
-            <div className="bg-surface/50 border-t border-border px-6 py-4 flex items-center justify-end gap-3 rounded-b-xl">
+            <div className="bg-surface/50 border-t border-border px-6 py-4 flex items-center justify-end gap-3 rounded-b-xl flex-wrap">
+              {d.status === 'deployed' && d.base36Url && (
+                <a
+                  href={d.viewUrl ?? portalViewUrl(d.base36Url, d.network)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mr-auto"
+                >
+                  <Button variant="primary" size="sm">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View live site
+                  </Button>
+                </a>
+              )}
               {d.status === 'failed' && (
                 <Button variant="primary" onClick={handleRetry} disabled={retrying}>
                   {retrying ? <Spinner className="mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
@@ -528,18 +494,4 @@ function LogPre({ liveLogs, storedLogs }: { liveLogs: string; storedLogs: unknow
     html = '<span style="color:#f85149">[Error rendering logs]</span>'
   }
   return <pre dangerouslySetInnerHTML={{ __html: html }} className="text-textMuted" />
-}
-
-function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-2 text-textMuted text-sm">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <div className="text-sm font-medium text-white truncate max-w-[150px]" title={value}>
-        {value}
-      </div>
-    </div>
-  )
 }
