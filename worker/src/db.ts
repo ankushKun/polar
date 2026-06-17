@@ -1,11 +1,8 @@
 import type { D1Database } from '@cloudflare/workers-types'
-import type { Context } from 'hono'
 import type { Env } from './index'
 import type { Deployment, Project, ProjectSecretMetadata, ProjectSecretRecord } from './types'
 
-type Ctx = Context<{ Bindings: Env }>
-
-export function getDb(c: Ctx): D1Database {
+export function getDb(c: { env: Env }): D1Database {
   return c.env.DB
 }
 

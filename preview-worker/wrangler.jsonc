@@ -8,7 +8,8 @@
     "enabled": true
   },
   "vars": {
-    "PORTAL_SUBDOMAIN_BASE": "polar.ankush.one"
+    "PORTAL_SUBDOMAIN_BASE": "polar.ankush.one",
+    "POLAR_API_BASE": "https://glacier.construct-computer.workers.dev/api"
   },
   "routes": [
     { "pattern": "*.polar.ankush.one/*", "zone_name": "ankush.one" }

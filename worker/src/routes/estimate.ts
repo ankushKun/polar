@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { getContainer } from '@cloudflare/containers'
 import type { Env } from '..'
-import { verifyJwt } from '../auth'
+import { requireAuth } from '../request-auth'
 import type { BuildRequest } from '../types'
 import { detectFromGithubApi } from '../auto-detect'
 import { resolveMainnetEpochs, resolveTestnetEpochs } from '../epochs'
@@ -15,21 +15,13 @@ const WAL_PER_GIB_PER_EPOCH = 1.0
 const SUI_GAS_ESTIMATE = 0.001
 
 router.post('/estimate', async (c) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
+  const auth = await requireAuth(c)
+  if (auth instanceof Response) return auth
 
   const body = await c.req.json<BuildRequest & { epochs?: number | 'max'; network?: 'mainnet' | 'testnet' }>()
   const { repoUrl, branch = 'main', network = 'testnet' } = body
   const commitSha = body.commitSha?.trim() || undefined
-  const userAddress = payload.address as string
+  const userAddress = auth.userAddress
 
   if (!repoUrl) return c.json({ error: 'repoUrl is required' }, 400)
   if (!repoUrl.startsWith('https://github.com/')) return c.json({ error: 'only GitHub repositories are supported' }, 400)

@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
 import { getContainer } from '@cloudflare/containers'
 import type { Env } from '..'
-import { verifyJwt } from '../auth'
+import type { AuthenticatedEnv } from '../hono-env'
+import { requireAuth, authenticateRequest } from '../request-auth'
 import { timedContainerFetch } from '../container-fetch'
 import {
   createDeployment,
@@ -38,7 +39,19 @@ import {
   validateSecretValue,
 } from '../secrets'
 
-const router = new Hono<{ Bindings: Env }>()
+const router = new Hono<AuthenticatedEnv>()
+
+router.use('*', async (c, next) => {
+  const path = c.req.path
+  if (c.req.method === 'GET' && path.includes('/logs')) {
+    await next()
+    return
+  }
+  const auth = await requireAuth(c)
+  if (auth instanceof Response) return auth
+  c.set('userAddress', auth.userAddress)
+  await next()
+})
 
 type ContainerDeployState = {
   status?: 'pending' | 'running' | 'done' | 'error'
@@ -292,17 +305,6 @@ async function findExistingSiteObjectId(
 router.post('/deploy', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const body = await c.req.json<DeployRequest>()
   const { repoUrl, branch = 'main', network = 'testnet' } = body
   const requestedCommitSha = body.commitSha?.trim() || undefined
@@ -351,7 +353,7 @@ router.post('/deploy', async (c) => {
 
   const normalizedOutputDir = coerceRelativeOutputDir(outputDir ?? null, baseDir) ?? outputDir ?? null
 
-  const userAddress = payload.address as string
+  const userAddress = c.get('userAddress')
   const resolvedCommit = await resolveDeploymentCommit(c.env, db, userAddress, repoUrl, branch, requestedCommitSha)
   if (!resolvedCommit.ok) {
     return c.json({ error: resolvedCommit.error }, resolvedCommit.status || 500)
@@ -428,17 +430,6 @@ router.post('/deploy', async (c) => {
 router.get('/deployments/:id', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const id = c.req.param('id')
   let deployment = await getDeployment(db, id)
 
@@ -446,7 +437,7 @@ router.get('/deployments/:id', async (c) => {
     return c.json({ error: 'deployment not found' }, 404)
   }
 
-  if (deployment.userAddress !== (payload.address as string)) {
+  if (deployment.userAddress !== (c.get('userAddress'))) {
     return c.json({ error: 'not authorized' }, 403)
   }
 
@@ -460,17 +451,6 @@ router.get('/deployments/:id', async (c) => {
 router.post('/deployments/:id/retry', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const id = c.req.param('id')
   const deployment = await getDeployment(db, id)
 
@@ -478,7 +458,7 @@ router.post('/deployments/:id/retry', async (c) => {
     return c.json({ error: 'deployment not found' }, 404)
   }
 
-  if (deployment.userAddress !== (payload.address as string)) {
+  if (deployment.userAddress !== (c.get('userAddress'))) {
     return c.json({ error: 'not authorized' }, 403)
   }
 
@@ -487,7 +467,7 @@ router.post('/deployments/:id/retry', async (c) => {
   }
 
   // Use the original deployment config for reproducible retry semantics.
-  const project = await getProjectByRepo(db, payload.address as string, deployment.repoUrl)
+  const project = await getProjectByRepo(db, c.get('userAddress'), deployment.repoUrl)
 
   const retryId = crypto.randomUUID()
 
@@ -513,7 +493,7 @@ router.post('/deployments/:id/retry', async (c) => {
       : await resolveDeploymentCommit(
           c.env,
           db,
-          payload.address as string,
+          c.get('userAddress'),
           deployment.repoUrl,
           deployment.branch,
           undefined,
@@ -527,7 +507,7 @@ router.post('/deployments/:id/retry', async (c) => {
 
   await createDeployment(db, {
     id: retryId,
-    userAddress: payload.address as string,
+    userAddress: c.get('userAddress'),
     repoUrl: deployment.repoUrl,
     branch: deployment.branch,
     ...commitFields,
@@ -549,7 +529,7 @@ router.post('/deployments/:id/retry', async (c) => {
       c.env,
       db,
       retryId,
-      payload.address as string,
+      c.get('userAddress'),
       project?.id,
       deployment.repoUrl,
       deployment.branch,
@@ -570,17 +550,6 @@ router.post('/deployments/:id/retry', async (c) => {
 router.post('/deployments/:id/redeploy', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const id = c.req.param('id')
   const deployment = await getDeployment(db, id)
 
@@ -588,7 +557,7 @@ router.post('/deployments/:id/redeploy', async (c) => {
     return c.json({ error: 'deployment not found' }, 404)
   }
 
-  const userAddress = payload.address as string
+  const userAddress = c.get('userAddress')
   if (deployment.userAddress !== userAddress) {
     return c.json({ error: 'not authorized' }, 403)
   }
@@ -688,30 +657,35 @@ router.post('/deployments/:id/redeploy', async (c) => {
   return c.json({ id: redeployId, status: 'queued' }, 202)
 })
 
-// GET /api/deployments/:id/logs - SSE live log stream
+// GET /api/deployments/:id/logs - SSE live log stream (browser) or JSON snapshot (agents/MCP)
 router.get('/deployments/:id/logs', async (c) => {
   const db = getDb(c)
 
-  const token = c.req.query('token') || ''
-  const payload = token ? await verifyJwt(token, c.env.JWT_SECRET) : null
-  if (!payload) {
+  const queryToken = c.req.query('token') || ''
+  const authHeader = c.req.header('Authorization')
+  const bearer = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  const auth = await authenticateRequest(c, bearer || queryToken || null)
+  if (!auth) {
     return c.json({ error: 'invalid or expired token' }, 401)
   }
 
   const id = c.req.param('id')
   let deployment = await getDeployment(db, id)
-  if (!deployment || deployment.userAddress !== (payload.address as string)) {
+  if (!deployment || deployment.userAddress !== auth.userAddress) {
     return c.json({ error: 'not found' }, 404)
   }
 
   deployment = await finalizeDeploymentFromContainer(c.env, db, deployment, c.executionCtx)
 
-  // If build is not active, serve logs from D1
-  if (!['building', 'deploying'].includes(deployment.status)) {
+  const wantsJson =
+    c.req.query('format') === 'json' ||
+    (c.req.header('Accept')?.includes('application/json') ?? false)
+
+  if (!['building', 'deploying'].includes(deployment.status) || wantsJson) {
     return c.json({ logs: deployment.logs })
   }
 
-  // Stream logs from the container via SSE
+  // Stream logs from the container via SSE (browser UI)
   try {
     const container = getContainer(c.env.BUILD_CONTAINER, id)
     await container.startAndWaitForPorts({ cancellationOptions: { portReadyTimeoutMS: 10000 } })
@@ -764,20 +738,9 @@ router.get('/deployments/:id/logs', async (c) => {
 router.get('/deployments', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const limit = Number(c.req.query('limit')) || 20
   const offset = Number(c.req.query('offset')) || 0
-  const deployments = await getDeployments(db, payload.address as string, limit, offset)
+  const deployments = await getDeployments(db, c.get('userAddress'), limit, offset)
   const origin = getPortalPublicOrigin(c.env, c.req.url)
   const subdomainBase = getPortalSubdomainBase(c.env)
   return c.json({ deployments: deployments.map((d) => withViewUrl(d, origin, subdomainBase)) })
@@ -788,36 +751,14 @@ router.get('/deployments', async (c) => {
 router.get('/projects', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
-  const projects = await getProjects(db, payload.address as string)
+  const projects = await getProjects(db, c.get('userAddress'))
   return c.json({ projects })
 })
 
 router.post('/projects/:id/deploy-latest', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
-  const userAddress = payload.address as string
+  const userAddress = c.get('userAddress')
   const project = await getProject(db, c.req.param('id'))
   if (!project || project.userAddress !== userAddress) {
     return c.json({ error: 'project not found' }, 404)
@@ -885,17 +826,6 @@ router.post('/projects/:id/deploy-latest', async (c) => {
 router.get('/projects/:id', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const id = c.req.param('id')
   const project = await getProject(db, id)
 
@@ -903,11 +833,11 @@ router.get('/projects/:id', async (c) => {
     return c.json({ error: 'project not found' }, 404)
   }
 
-  if (project.userAddress !== (payload.address as string)) {
+  if (project.userAddress !== (c.get('userAddress'))) {
     return c.json({ error: 'not authorized' }, 403)
   }
 
-  const deployments = await getDeploymentsByRepo(db, payload.address as string, project.repoUrl)
+  const deployments = await getDeploymentsByRepo(db, c.get('userAddress'), project.repoUrl)
   const origin = getPortalPublicOrigin(c.env, c.req.url)
   const subdomainBase = getPortalSubdomainBase(c.env)
 
@@ -920,20 +850,9 @@ router.get('/projects/:id', async (c) => {
 router.get('/projects/:id/secrets', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const id = c.req.param('id')
   const project = await getProject(db, id)
-  const userAddress = payload.address as string
+  const userAddress = c.get('userAddress')
 
   if (!project || project.userAddress !== userAddress) {
     return c.json({ error: 'project not found' }, 404)
@@ -946,20 +865,9 @@ router.get('/projects/:id/secrets', async (c) => {
 router.put('/projects/:id/secrets/:name', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const id = c.req.param('id')
   const name = c.req.param('name')
-  const userAddress = payload.address as string
+  const userAddress = c.get('userAddress')
   const project = await getProject(db, id)
 
   if (!project || project.userAddress !== userAddress) {
@@ -988,19 +896,8 @@ router.put('/projects/:id/secrets/:name', async (c) => {
 router.post('/projects/:id/secrets/import', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const id = c.req.param('id')
-  const userAddress = payload.address as string
+  const userAddress = c.get('userAddress')
   const project = await getProject(db, id)
 
   if (!project || project.userAddress !== userAddress) {
@@ -1024,20 +921,9 @@ router.post('/projects/:id/secrets/import', async (c) => {
 router.delete('/projects/:id/secrets/:name', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const id = c.req.param('id')
   const name = c.req.param('name')
-  const userAddress = payload.address as string
+  const userAddress = c.get('userAddress')
   const project = await getProject(db, id)
 
   if (!project || project.userAddress !== userAddress) {
@@ -1055,35 +941,13 @@ router.delete('/projects/:id/secrets/:name', async (c) => {
 router.delete('/projects/:id', async (c) => {
   const db = getDb(c)
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const id = c.req.param('id')
-  await deleteProject(db, id, payload.address as string)
+  await deleteProject(db, id, c.get('userAddress'))
   return c.json({ success: true })
 })
 
 router.delete('/deployments/:id', async (c) => {
   const db = getDb(c)
-
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
 
   const id = c.req.param('id')
   const deployment = await getDeployment(db, id)
@@ -1092,7 +956,7 @@ router.delete('/deployments/:id', async (c) => {
     return c.json({ error: 'deployment not found' }, 404)
   }
 
-  if (deployment.userAddress !== (payload.address as string)) {
+  if (deployment.userAddress !== (c.get('userAddress'))) {
     return c.json({ error: 'not authorized' }, 403)
   }
 

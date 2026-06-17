@@ -1,6 +1,8 @@
 import { Hono } from 'hono'
 import type { Env } from '..'
-import { verifyJwt, createOAuthStateToken, verifyOAuthStateToken, createSessionJwt } from '../auth'
+import type { AuthenticatedEnv } from '../hono-env'
+import { createOAuthStateToken, verifyOAuthStateToken, createSessionJwt } from '../auth'
+import { requireAuth } from '../request-auth'
 import {
   getOAuthUrl,
   exchangeCode,
@@ -11,7 +13,19 @@ import {
   listCommits,
 } from '../github-api'
 
-const router = new Hono<{ Bindings: Env }>()
+const router = new Hono<AuthenticatedEnv>()
+
+router.use('*', async (c, next) => {
+  const path = c.req.path
+  if (path === '/login' || path === '/callback' || path.startsWith('/login')) {
+    await next()
+    return
+  }
+  const auth = await requireAuth(c)
+  if (auth instanceof Response) return auth
+  c.set('userAddress', auth.userAddress)
+  await next()
+})
 
 function trimSlash(s: string): string {
   return s.replace(/\/+$/, '')
@@ -128,21 +142,10 @@ router.get('/callback', async (c) => {
 
 // GET /api/github/status - check if user has GitHub linked (always true after login; useful for token row)
 router.get('/status', async (c) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const jwt = authHeader.slice(7)
-  const payload = await verifyJwt(jwt, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const db = c.env.DB
   const row = await db
     .prepare('SELECT access_token, github_user FROM github_tokens WHERE user_address = ?1')
-    .bind(payload.address as string)
+    .bind(c.get('userAddress'))
     .first<{ access_token: string; github_user: string | null }>()
 
   return c.json({
@@ -153,21 +156,10 @@ router.get('/status', async (c) => {
 
 // GET /api/github/repos - list user's repositories
 router.get('/repos', async (c) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const jwt = authHeader.slice(7)
-  const payload = await verifyJwt(jwt, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const db = c.env.DB
   const row = await db
     .prepare('SELECT access_token FROM github_tokens WHERE user_address = ?1')
-    .bind(payload.address as string)
+    .bind(c.get('userAddress'))
     .first<{ access_token: string }>()
 
   if (!row) {
@@ -181,21 +173,10 @@ router.get('/repos', async (c) => {
 
 // GET /api/github/repos/:owner/:repo/contents - list repo contents
 router.get('/repos/:owner/:repo/contents', async (c) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const jwt = authHeader.slice(7)
-  const payload = await verifyJwt(jwt, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const db = c.env.DB
   const row = await db
     .prepare('SELECT access_token FROM github_tokens WHERE user_address = ?1')
-    .bind(payload.address as string)
+    .bind(c.get('userAddress'))
     .first<{ access_token: string }>()
 
   if (!row) {
@@ -211,21 +192,10 @@ router.get('/repos/:owner/:repo/contents', async (c) => {
 
 // GET /api/github/repos/:owner/:repo/commits - recent commits for branch picker
 router.get('/repos/:owner/:repo/commits', async (c) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const jwt = authHeader.slice(7)
-  const payload = await verifyJwt(jwt, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const db = c.env.DB
   const row = await db
     .prepare('SELECT access_token FROM github_tokens WHERE user_address = ?1')
-    .bind(payload.address as string)
+    .bind(c.get('userAddress'))
     .first<{ access_token: string }>()
 
   if (!row) {
@@ -240,21 +210,10 @@ router.get('/repos/:owner/:repo/commits', async (c) => {
 
 // POST /api/github/repos/:owner/:repo/detect - deep scan for deployable projects
 router.post('/repos/:owner/:repo/detect', async (c) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const jwt = authHeader.slice(7)
-  const payload = await verifyJwt(jwt, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const db = c.env.DB
   const row = await db
     .prepare('SELECT access_token FROM github_tokens WHERE user_address = ?1')
-    .bind(payload.address as string)
+    .bind(c.get('userAddress'))
     .first<{ access_token: string }>()
 
   if (!row) {
@@ -271,21 +230,10 @@ router.post('/repos/:owner/:repo/detect', async (c) => {
 
 // GET /api/github/repos/:owner/:repo/branches - list branches (for webhook config)
 router.get('/repos/:owner/:repo/branches', async (c) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const jwt = authHeader.slice(7)
-  const payload = await verifyJwt(jwt, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const db = c.env.DB
   const row = await db
     .prepare('SELECT access_token FROM github_tokens WHERE user_address = ?1')
-    .bind(payload.address as string)
+    .bind(c.get('userAddress'))
     .first<{ access_token: string }>()
 
   if (!row) {
@@ -315,21 +263,10 @@ router.get('/repos/:owner/:repo/branches', async (c) => {
 
 // POST /api/github/repos/detect-frameworks - batch quick framework detection
 router.post('/repos/detect-frameworks', async (c) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-
-  const jwt = authHeader.slice(7)
-  const payload = await verifyJwt(jwt, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-
   const db = c.env.DB
   const row = await db
     .prepare('SELECT access_token FROM github_tokens WHERE user_address = ?1')
-    .bind(payload.address as string)
+    .bind(c.get('userAddress'))
     .first<{ access_token: string }>()
 
   if (!row) {

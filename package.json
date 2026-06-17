@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "setup:env": "node scripts/setup-env.mjs",
-    "install:all": "npm install --prefix worker && npm install --prefix frontend && npm install --prefix preview-worker",
+    "install:all": "npm install --prefix worker && npm install --prefix frontend && npm install --prefix preview-worker && npm install --prefix mcp",
     "dev": "concurrently -n worker,frontend -c blue,magenta \"npm run dev --prefix worker\" \"npm run dev --prefix frontend\"",
     "dev:worker": "npm run dev --prefix worker",
     "dev:frontend": "npm run dev --prefix frontend",

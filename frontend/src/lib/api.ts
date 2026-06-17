@@ -306,3 +306,37 @@ export async function quickDetectFrameworks(repos: Array<{ owner: string; name: 
   if (!resp.ok) return {}
   const data = await resp.json(); return data.results || {}
 }
+
+// ── Agent API key (session JWT only) ──
+
+export interface AgentTokenStatus {
+  configured: boolean
+  prefix: string | null
+  createdAt: string | null
+}
+
+export async function getAgentTokenStatus(): Promise<AgentTokenStatus> {
+  const resp = await authFetch('/agent-token')
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || 'failed to load agent token')
+  }
+  return resp.json()
+}
+
+export async function createAgentToken(): Promise<{ token: string; prefix: string; createdAt: string }> {
+  const resp = await authFetch('/agent-token', { method: 'POST' })
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || 'failed to create agent token')
+  }
+  return resp.json()
+}
+
+export async function revokeAgentToken(): Promise<void> {
+  const resp = await authFetch('/agent-token', { method: 'DELETE' })
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || 'failed to revoke agent token')
+  }
+}

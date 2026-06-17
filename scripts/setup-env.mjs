@@ -60,7 +60,7 @@ VITE_DEV_MOCK_DATA=true
 ensure(join(root, 'frontend/.env.production'), () => {
   writeFileSync(
     join(root, 'frontend/.env.production'),
-    'VITE_API_BASE=/api\nVITE_PORTAL_SUBDOMAIN_BASE=polar.ankush.one\n',
+    'VITE_API_BASE=/api\nVITE_PORTAL_SUBDOMAIN_BASE=polar.ankush.one\nVITE_MCP_URL=https://polar.ankush.one/mcp\n',
   )
 })
 

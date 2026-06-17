@@ -2,13 +2,14 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { Container } from '@cloudflare/containers'
 import { BuildContainer } from './container'
-import { verifyJwt } from './auth'
+import { requireAuth, authenticateRequest } from './request-auth'
 import deploy from './routes/deploy'
 import webhook from './routes/webhook'
 import github from './routes/github'
 import wallet from './routes/wallet'
 import estimate from './routes/estimate'
 import dev from './routes/dev'
+import agentToken from './routes/agent-token'
 
 export { BuildContainer }
 
@@ -72,21 +73,15 @@ app.use('*', cors({
 }))
 
 app.get('/api/me', async (c) => {
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'missing authorization header' }, 401)
-  }
-  const token = authHeader.slice(7)
-  const payload = await verifyJwt(token, c.env.JWT_SECRET)
-  if (!payload) {
-    return c.json({ error: 'invalid or expired token' }, 401)
-  }
-  const rec = payload as Record<string, unknown>
+  const auth = await requireAuth(c)
+  if (auth instanceof Response) return auth
   return c.json({
-    user_id: rec.address as string,
-    github_login: (rec.github_login as string | undefined) ?? null,
+    user_id: auth.userAddress,
+    github_login: auth.githubLogin,
   })
 })
+
+app.route('/api', agentToken)
 
 app.route('/api', deploy)
 app.route('/api/webhook', webhook)

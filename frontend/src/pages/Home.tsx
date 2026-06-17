@@ -4,6 +4,7 @@ import { LandingFade } from '../components/landing/LandingFade'
 import { LandingDemo } from '../components/landing/LandingDemo'
 import { LandingIntro } from '../components/landing/LandingIntro'
 import { LandingWorkflow } from '../components/landing/LandingWorkflow'
+import { LandingAgent } from '../components/landing/LandingAgent'
 import { LandingFeatures } from '../components/landing/LandingFeatures'
 import { LandingFaq } from '../components/landing/LandingFaq'
 import { LandingCta } from '../components/landing/LandingCta'
@@ -24,6 +25,7 @@ export default function Home() {
         <LandingDemo />
         <LandingIntro />
         <LandingWorkflow />
+        <LandingAgent />
         <LandingFeatures />
         <LandingFaq />
         <LandingCta />

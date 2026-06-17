@@ -7,7 +7,7 @@ Polar splits work across **three deployable pieces**:
 | Piece | Cloudflare account | Host / URL | What it runs |
 | --- | --- | --- | --- |
 | **Org worker** (`worker/`) | Org | `https://glacier.construct-computer.workers.dev` | Hono API, D1, build containers, embedded React SPA, Walrus deploy orchestration |
-| **Preview worker** (`preview-worker/`) | Personal | `https://{base36}.polar.ankush.one/` | Walrus Sites portal - serves deployed site HTML/assets by object ID |
+| **Preview worker** (`preview-worker/`) | Personal | `https://{base36}.polar.ankush.one/` + `https://polar.ankush.one/mcp` | Walrus Sites portal; hosted Polar MCP (Streamable HTTP) |
 | **Walrus frontend** (`frontend/` → Walrus) | On-chain | `https://polar.wal.app` | Same React app, built with absolute API URL pointing at the org worker |
 
 User-deployed sites get preview URLs like `https://{base36SiteId}.polar.ankush.one/` (mainnet/testnet auto-detected via RPC). The org worker computes these in API `viewUrl` responses when `PORTAL_SUBDOMAIN_BASE` is set.
@@ -50,7 +50,7 @@ cd worker && npm run deploy
 
 This runs:
 
-1. `build:frontend` - `VITE_API_BASE=/api` and `VITE_PORTAL_SUBDOMAIN_BASE=polar.ankush.one` baked into the SPA
+1. `build:frontend` - `VITE_API_BASE=/api`, `VITE_PORTAL_SUBDOMAIN_BASE=polar.ankush.one`, and `VITE_MCP_URL=https://polar.ankush.one/mcp` baked into the SPA
 2. `wrangler deploy --keep-vars` - uploads worker + `frontend/dist` assets + rebuilds/pushes the build container image
 
 **Use `--keep-vars`** so dashboard secrets and any vars not in `wrangler.jsonc` are preserved. Do not deploy without it unless intentionally replacing all vars.
@@ -111,13 +111,21 @@ Local: `npm run db:migrate` (runs all migrations against local D1).
 
 ## Preview worker (`preview-worker/`)
 
-Serves Walrus Sites at subdomain URLs. **CI/CD only** - see [`preview-worker/README.md`](preview-worker/README.md).
+Serves Walrus Sites at subdomain URLs and **hosted MCP** at apex `/mcp`. **CI/CD only** - see [`preview-worker/README.md`](preview-worker/README.md).
+
+### Vars in `preview-worker/wrangler.jsonc`
+
+| Var | Production value | Purpose |
+| --- | --- | --- |
+| `PORTAL_SUBDOMAIN_BASE` | `polar.ankush.one` | Subdomain site routing + apex MCP gate |
+| `POLAR_API_BASE` | `https://glacier.construct-computer.workers.dev/api` | Upstream for MCP tool HTTP calls |
 
 ### Production URLs
 
 | URL | Purpose |
 | --- | --- |
 | `https://{base36}.polar.ankush.one/` | Deployed site (network auto-detected) |
+| `https://polar.ankush.one/mcp` | Hosted Polar MCP (apex only; Streamable HTTP) |
 | `https://polar.ankush.one/health` | Preview worker health (apex custom domain) |
 | Legacy: `/m/{id}/`, `/t/{id}/` on workers.dev | Path-prefix portal (backward compat) |
 
@@ -125,7 +133,7 @@ Serves Walrus Sites at subdomain URLs. **CI/CD only** - see [`preview-worker/REA
 
 | Setting | Value |
 | --- | --- |
-| Build command | `npm ci --prefix preview-worker` |
+| Build command | `npm ci --prefix preview-worker` (also installs `mcp/` via `file:../mcp`) |
 | Deploy command | `npx wrangler deploy --config preview-worker/wrangler.jsonc` |
 
 ### DNS / routes (ankush.one zone)
@@ -156,6 +164,7 @@ The public UI on Walrus is a **separate deploy** from the org worker. The org wo
 cd frontend
 VITE_API_BASE='https://glacier.construct-computer.workers.dev/api' \
 VITE_PORTAL_SUBDOMAIN_BASE='polar.ankush.one' \
+VITE_MCP_URL='https://polar.ankush.one/mcp' \
   npm run build
 
 ../worker/walrus-deploy/walrus-deploy --folder dist --network mainnet --epochs max
@@ -172,11 +181,11 @@ From repo root:
 | Command | What it starts |
 | --- | --- |
 | `npm run setup:env` | Create `worker/.dev.vars`, `frontend/.env.*` from examples |
-| `npm run install:all` | Install deps in worker, frontend, preview-worker |
+| `npm run install:all` | Install deps in worker, frontend, preview-worker, mcp |
 | `npm run dev` | Worker `:8787` + frontend `:3000` (Vite proxies `/api` → worker) |
 | `npm run dev:worker` | Worker only |
 | `npm run dev:frontend` | Frontend only |
-| `npm run dev:preview` | Preview worker `:8788` |
+| `npm run dev:preview` | Preview worker `:8788` (MCP at `/mcp` when `POLAR_API_BASE` set) |
 | `npm run build:frontend` | Production frontend build (same env as deploy) |
 
 Frontend local dev does **not** set `VITE_PORTAL_SUBDOMAIN_BASE` - preview links fall back to `/m/` `/t/` path-prefix against local preview worker.
@@ -203,10 +212,10 @@ When changing preview or portal URLs, keep these aligned:
 | Location | Key |
 | --- | --- |
 | `worker/wrangler.jsonc` | `PORTAL_SUBDOMAIN_BASE`, `PORTAL_PUBLIC_ORIGIN` |
-| `preview-worker/wrangler.jsonc` | `PORTAL_SUBDOMAIN_BASE`, route pattern |
-| `worker/package.json` `build:frontend` | `VITE_PORTAL_SUBDOMAIN_BASE` |
-| `frontend/.env.production` | `VITE_PORTAL_SUBDOMAIN_BASE` |
-| Walrus build command | `VITE_PORTAL_SUBDOMAIN_BASE` + `VITE_API_BASE` |
+| `preview-worker/wrangler.jsonc` | `PORTAL_SUBDOMAIN_BASE`, `POLAR_API_BASE`, route pattern |
+| `worker/package.json` `build:frontend` | `VITE_PORTAL_SUBDOMAIN_BASE`, `VITE_MCP_URL` |
+| `frontend/.env.production` | `VITE_PORTAL_SUBDOMAIN_BASE`, `VITE_MCP_URL` |
+| Walrus build command | `VITE_PORTAL_SUBDOMAIN_BASE` + `VITE_API_BASE` + `VITE_MCP_URL` |
 
 API adds `viewUrl` on deployment responses via `withViewUrl()` in `worker/src/view-url.ts`. Frontend uses `viewUrl` from API first, then `portalViewUrl()` fallback in `frontend/src/lib/portal.ts`.
 
@@ -222,9 +231,16 @@ cd worker && npm run deploy
 git add … && git commit -m "…" && git push
 ```
 
-Push is for preview-worker CI if portal code under `worker/src/portal/` changed (preview worker imports it).
+Push is for preview-worker CI if portal code under `worker/src/portal/` changed, or MCP code under `mcp/` / `preview-worker/` changed.
 
-### Ship preview-worker-only changes
+### Ship MCP / preview-worker changes
+
+```bash
+git add mcp/ preview-worker/ … && git commit -m "…" && git push
+# wait for Cloudflare CI on personal account - do NOT wrangler deploy preview-worker
+```
+
+### Ship preview-worker-only changes (portal, no MCP)
 
 ```bash
 git add preview-worker/ … && git commit -m "…" && git push

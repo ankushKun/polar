@@ -80,7 +80,7 @@ export function LandingHero() {
 
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 w-[calc(100%-2rem)] max-w-xl text-center">
         <p className="text-sm font-medium text-white sm:text-base">
-          Polar lets you deploy your web apps to Walrus in seconds
+          Deploy from GitHub or let your AI agent ship to Walrus via hosted MCP
         </p>
         <a
           href="#how-it-works"

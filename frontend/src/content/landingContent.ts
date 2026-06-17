@@ -16,6 +16,7 @@ export const LANDING_INTRO = {
     { label: 'GitHub sign-in' },
     { label: '8+ frameworks' },
     { label: 'Live preview URL' },
+    { label: 'Hosted agent MCP' },
   ],
   stack: [
     { label: 'Walrus', hrefKey: 'walrus' as const },
@@ -116,6 +117,27 @@ export const LANDING_FEATURES = {
       linkLabel: 'View on GitHub',
       linkKey: 'walrusDeploy' as const,
     },
+    {
+      id: 'agent-mcp',
+      title: 'Agent-native MCP',
+      description:
+        'Connect Cursor or Claude to https://polar.ankush.one/mcp — full deploy API parity, no local install.',
+      wide: false,
+    },
+  ],
+} as const
+
+export const LANDING_AGENT = {
+  headline: {
+    plain: 'Built for ',
+    accent: 'AI Agents',
+  } satisfies SplitHeadline,
+  description:
+    'Polar exposes a hosted Model Context Protocol server so agents can list repos, estimate cost, deploy to Walrus, and poll build logs — the same capabilities as the dashboard.',
+  bullets: [
+    'No npm install — point your MCP client at polar.ankush.one/mcp',
+    '~25 tools: projects, secrets, deploy, logs, GitHub discovery',
+    'Long-lived API keys from the /agents dashboard page',
   ],
 } as const
 
@@ -162,6 +184,11 @@ export const LANDING_FAQ = {
       question: 'Can I redeploy or roll back?',
       answer:
         'Every deployment is pinned to a Git commit SHA. You can redeploy any previous deployment or retry failed builds with the same configuration.',
+    },
+    {
+      question: 'Can AI agents deploy for me?',
+      answer:
+        'Yes. Connect Cursor or Claude Desktop to our hosted MCP at https://polar.ankush.one/mcp with a Polar API key from the /agents page. No local MCP install required.',
     },
   ],
 } as const

@@ -16,6 +16,8 @@ The user never touches a Sui wallet, never buys WAL, never runs a CLI command. E
 
 Polar removes the single biggest barrier to Walrus adoption: developer experience. By giving every dev a Vercel-like workflow for decentralized deployment, Polar turns Walrus from a protocol into a platform. Any React, Vue, Svelte, or static site can go from GitHub to a permanent URL in under 60 seconds. No Web3 knowledge required.
 
+**Agent-native:** Connect Cursor or Claude to our hosted MCP at [polar.ankush.one/mcp](https://polar.ankush.one/mcp) — full deploy API parity, no local install. Generate an API key at [/agents](https://polar.wal.app/agents).
+
 ---
 
 ## Key innovations
@@ -37,6 +39,27 @@ Pre-deploy builds run in the container to calculate exact WAL and SUI costs befo
 
 Polar itself is deployed via Polar with SuiNS at [polar.wal.app](https://polar.wal.app).
 
+### Hosted agent MCP
+
+Polar exposes a **hosted Model Context Protocol** server for AI agents (Cursor, Claude Desktop, etc.):
+
+| Surface | URL | Role |
+|---------|-----|------|
+| **MCP endpoint** | `https://polar.ankush.one/mcp` | Streamable HTTP; ~25 tools proxying to REST API |
+| **API + keys** | glacier worker `/api/*` | Auth, builds, Walrus deploy; API keys in D1 |
+| **Key management** | [polar.wal.app/agents](https://polar.wal.app/agents) | Generate/regenerate `polar_live_…` keys + `mcp.json` |
+
+```
+Cursor / Claude  →  polar.ankush.one/mcp  →  glacier.construct-computer.workers.dev/api
+                         (preview worker)              (org worker)
+```
+
+- **Auth:** `Authorization: Bearer polar_live_…` (long-lived API key, one per account)
+- **No install:** remote MCP URL + headers in `.cursor/mcp.json`
+- **Deploy split:** MCP changes ship via **git push** (preview-worker CI); API/agents UI via `cd worker && npm run deploy`
+
+See [`mcp/README.md`](mcp/README.md) for tool list and agent workflows.
+
 ---
 
 ## How it works
@@ -44,11 +67,13 @@ Polar itself is deployed via Polar with SuiNS at [polar.wal.app](https://polar.w
 ```
 GitHub Repo → Cloudflare Container (build) → Walrus Site (deploy) → Polar preview portal ({id}.polar.ankush.one)
                     ↕
-           Cloudflare Worker (API)
+           Cloudflare Worker (API + agent API keys)
                     ↕
               D1 Database (SQLite)
                     ↕
-           React SPA (Frontend)
+           React SPA (Frontend + /agents MCP config)
+
+AI agents → polar.ankush.one/mcp (preview worker) → same API
 ```
 
 1. **Sign in** with GitHub OAuth - no passwords, no Sui wallet needed
@@ -75,6 +100,8 @@ On push to main, webhooks auto-redeploy. Build logs stream in real-time via SSE.
 | **Live log streaming** | Real-time SSE logs from the build container with ANSI color rendering |
 | **Retry + redeploy** | Retry failed deploys with same config; redeploy from any completed deployment |
 | **Static site verification** | Post-build check for dangerous files (executables, scripts, binaries) |
+| **Agent MCP** | Hosted at `polar.ankush.one/mcp` — deploy, secrets, logs, GitHub discovery (~25 tools) |
+| **API keys** | Long-lived `polar_live_…` tokens for agents; manage at `/agents` |
 
 ---
 
@@ -82,9 +109,11 @@ On push to main, webhooks auto-redeploy. Build logs stream in real-time via SSE.
 
 ```
 ├── frontend/                  # React 19 SPA (Vite + Tailwind CSS)
-│   ├── src/pages/             # Home, Dashboard, Deploy, DeploymentDetail, ProjectDetail
+│   ├── src/pages/             # Home, Dashboard, Deploy, Agents, DeploymentDetail, ProjectDetail
 │   ├── src/hooks/             # useAuth (OAuth + JWT), useSSE (live log streaming)
-│   └── src/lib/               # API client, epoch math, ANSI rendering
+│   └── src/lib/               # API client, epoch math, ANSI rendering, MCP config helper
+├── mcp/                       # Shared MCP library (Streamable HTTP + tool registry)
+│   └── src/                   # handler, polar-client, tools (~25 REST proxies)
 ├── worker/
 │   ├── src/                   # Cloudflare Worker (Hono API)
 │   │   ├── routes/            # deploy, estimate, github, wallet, webhook
@@ -97,7 +126,7 @@ On push to main, webhooks auto-redeploy. Build logs stream in real-time via SSE.
 │   │   ├── deployer.ts        # SUI/WAL balance check → exchange → site-builder deploy
 │   │   └── detector.ts        # Filesystem-based framework detection
 │   ├── walrus-deploy/         # Git submodule: [walrus-deploy](https://github.com/ankushKun/walrus-deploy) deploy wrapper
-│   ├── migrations/            # D1 SQL schema (6 migrations)
+│   ├── migrations/            # D1 SQL schema (7 migrations incl. agent_api_tokens)
 │   └── Dockerfile             # Container image (node:22-slim + git + pnpm/yarn/bun + sui/walrus CLI)
 ```
 
@@ -135,7 +164,10 @@ cd polar
 # Apply D1 migrations
 cd worker
 npx wrangler d1 execute glacier-db --local --file=migrations/0001_initial.sql
-# ...repeat for migrations 0002 through 0006
+# ...repeat for migrations 0002 through 0007
+
+# Preview worker local MCP (optional)
+# echo 'POLAR_API_BASE=http://127.0.0.1:8787/api' > preview-worker/.dev.vars
 
 # Copy and fill secrets
 cp .dev.vars.example .dev.vars
@@ -171,13 +203,18 @@ Polar splits **app/deploy** and **site preview** across two Cloudflare Workers:
 
 | Worker | Account | Role |
 |--------|---------|------|
-| **glacier** (org) | Org | API, D1, build containers, Walrus deploy |
-| **polar** (preview) | Personal | Walrus Sites portal at `{base36}.polar.ankush.one` |
+| **glacier** (org) | Org | API, D1, build containers, Walrus deploy, `/agents` UI |
+| **polar** (preview) | Personal | Walrus Sites portal + **hosted MCP** at `polar.ankush.one/mcp` |
 
 - **UI:** [polar.wal.app](https://polar.wal.app) (Walrus + SuiNS)
 - **Preview links:** `https://{base36}.polar.ankush.one/` (from API `viewUrl`; mainnet/testnet auto-detected)
 
-The preview worker deploys via **GitHub → Cloudflare CI/CD** on the personal account (see [`preview-worker/README.md`](preview-worker/README.md)). Do not deploy it from CLI.
+The preview worker deploys via **GitHub → Cloudflare CI/CD** on the personal account (see [`preview-worker/README.md`](preview-worker/README.md)). Do not deploy it from CLI. MCP endpoint changes require **commit + push to `main`**.
+
+| Change | Deploy path |
+|--------|-------------|
+| API keys, `/agents`, landing, glacier API | `cd worker && npm run deploy` |
+| `/mcp` endpoint, `mcp/` package | **push to `main`** (preview-worker CI) |
 
 The public `wal.app` portal only serves mainnet sites with SuiNS names; Polar's preview worker resolves sites by object ID on both networks.
 
@@ -192,6 +229,7 @@ npm run deploy
 cd ../frontend
 VITE_API_BASE='https://glacier.construct-computer.workers.dev/api' \
 VITE_PORTAL_SUBDOMAIN_BASE='polar.ankush.one' \
+VITE_MCP_URL='https://polar.ankush.one/mcp' \
   npm run build
 ../worker/walrus-deploy/walrus-deploy --folder dist --network mainnet --epochs max
 ```
@@ -212,7 +250,6 @@ VITE_PORTAL_SUBDOMAIN_BASE='polar.ankush.one' \
 ## What's next
 
 - **In-app SuiNS integration** so users can assign a Site ID to their SuiNS names without leaving Polar
-- **Agent MCP for Polar** so AI agents can deploy apps directly to Walrus, unlocking the agent economy
 - **CI/CD webhooks** for auto-deploy whenever changes are pushed to GitHub
 
 ---
