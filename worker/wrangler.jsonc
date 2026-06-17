@@ -56,8 +56,9 @@
   "vars": {
     "WALRUS_NETWORK": "testnet",
     "WALRUS_EPOCHS": "1",
-    "FRONTEND_URL": "https://glacier.construct-computer.workers.dev",
-    "API_PUBLIC_URL": "https://glacier.construct-computer.workers.dev",
+    "FRONTEND_URL": "https://polar.wal.app",
+    "API_PUBLIC_URL": "https://polar.wal.app",
+    "GITHUB_REDIRECT_URI": "https://polar.wal.app/api/github/callback",
     "PORTAL_PUBLIC_ORIGIN": "https://polar.ankush.one",
     "PORTAL_SUBDOMAIN_BASE": "polar.ankush.one",
     "CORS_ORIGINS": "https://polar.wal.app"

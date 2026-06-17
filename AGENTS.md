@@ -78,8 +78,9 @@ These are set in config and deployed with the worker:
 | --- | --- | --- |
 | `PORTAL_SUBDOMAIN_BASE` | `polar.ankush.one` | API `viewUrl` → `https://{base36}.polar.ankush.one/` |
 | `PORTAL_PUBLIC_ORIGIN` | `https://polar.ankush.one` | Fallback portal origin |
-| `FRONTEND_URL` | org worker URL | OAuth redirect after login |
-| `API_PUBLIC_URL` | org worker URL | OAuth callback base, absolute API links |
+| `FRONTEND_URL` | `https://polar.wal.app` | OAuth redirect after login |
+| `API_PUBLIC_URL` | `https://polar.wal.app` | OAuth callback base, absolute API links |
+| `GITHUB_REDIRECT_URI` | `https://polar.wal.app/api/github/callback` | GitHub OAuth app callback (optional if `API_PUBLIC_URL` set) |
 | `CORS_ORIGINS` | `https://polar.wal.app` | Allow Walrus-hosted frontend to call API |
 | `WALRUS_NETWORK` | `testnet` | Default network for new deploys (override per project) |
 | `WALRUS_EPOCHS` | `1` | Default storage epochs |
@@ -153,7 +154,7 @@ The public UI on Walrus is a **separate deploy** from the org worker. The org wo
 
 ```bash
 cd frontend
-VITE_API_BASE='https://glacier.construct-computer.workers.dev/api' \
+VITE_API_BASE='https://polar.wal.app/api' \
 VITE_PORTAL_SUBDOMAIN_BASE='polar.ankush.one' \
   npm run build
 

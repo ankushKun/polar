@@ -92,8 +92,18 @@ router.get('/callback', async (c) => {
     return redirectWithHash(`error=${encodeURIComponent('GitHub OAuth not configured')}`)
   }
 
+  const redirectUri = resolveGithubRedirectUri(c.env, c.req.url)
+  if (!redirectUri) {
+    return redirectWithHash(`error=${encodeURIComponent('OAuth callback URL not configured')}`)
+  }
+
   try {
-    const { access_token, github_user, github_id } = await exchangeCode(code, clientId, clientSecret)
+    const { access_token, github_user, github_id } = await exchangeCode(
+      code,
+      clientId,
+      clientSecret,
+      redirectUri,
+    )
     const userId = `github:${github_id}`
     const db = c.env.DB
     await db

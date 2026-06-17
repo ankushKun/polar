@@ -52,7 +52,8 @@ export function getOAuthUrl(clientId: string, redirectUri: string, state: string
 export async function exchangeCode(
   code: string,
   clientId: string,
-  clientSecret: string
+  clientSecret: string,
+  redirectUri: string,
 ): Promise<{ access_token: string; github_user: string; github_id: number }> {
   const resp = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
@@ -65,6 +66,7 @@ export async function exchangeCode(
       client_id: clientId,
       client_secret: clientSecret,
       code,
+      redirect_uri: redirectUri,
     }),
   })
 
