@@ -87,7 +87,7 @@ For a **live testnet 200**, deploy any site to testnet via Polar and open `/t/{y
 
 ### Browser
 
-- Mainnet: https://polar.ankushkun.workers.dev/m/46f3881sp4r55fc6pcao9t93bieeejl4vr4k2uv8u4wwyx1a93/
+- Mainnet: https://polar.ankushkun.workers.dev/m/aHR0cHM6Ly9naXRodWIuY29tL2Fua3VzaEt1bi9wb2xhci5naXQ/
 - Testnet: https://polar.ankushkun.workers.dev/t/1p3repujoigwcqrk0w4itsxm7hs7xjl4hwgt3t0szn6evad83q/
 - Health: https://polar.ankushkun.workers.dev/health
 
@@ -95,7 +95,7 @@ For a **live testnet 200**, deploy any site to testnet via Polar and open `/t/{y
 
 ```bash
 curl -sI "https://polar.ankushkun.workers.dev/health"
-curl -sI "https://polar.ankushkun.workers.dev/m/46f3881sp4r55fc6pcao9t93bieeejl4vr4k2uv8u4wwyx1a93/"
+curl -sI "https://polar.ankushkun.workers.dev/m/aHR0cHM6Ly9naXRodWIuY29tL2Fua3VzaEt1bi9wb2xhci5naXQ/"
 curl -sI "https://polar.ankushkun.workers.dev/t/1p3repujoigwcqrk0w4itsxm7hs7xjl4hwgt3t0szn6evad83q/"
 ```
 
