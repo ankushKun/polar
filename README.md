@@ -155,8 +155,10 @@ cd ../frontend && npm run dev   # Frontend on :5173 with /api proxied to :8787
 |----------|----------|-------|
 | `JWT_SECRET` | Yes | Session signing (HS256) |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | Yes | OAuth App credentials |
-| `FRONTEND_URL` | Yes | Redirect target (e.g. `https://polar.wal.app`) |
-| `GITHUB_REDIRECT_URI` | Rec'd | Full callback URL; falls back to `{API_PUBLIC_URL}/api/github/callback` |
+| `FRONTEND_URL` | Yes | Post-login redirect (e.g. `https://polar.wal.app`) |
+| `API_PUBLIC_URL` | Yes | Worker origin (e.g. `https://glacier.construct-computer.workers.dev`) |
+| `GITHUB_REDIRECT_URI` | Rec'd | `https://glacier.construct-computer.workers.dev/api/github/callback` (match GitHub app) |
+| `CORS_ORIGINS` | Yes (Walrus UI) | `https://polar.wal.app` |
 | `SUI_KEYSTORE` / `SUI_ADDRESS` | For deploy | Platform wallet for publishing sites |
 | `SECRETS_ENCRYPTION_KEY` | For secrets | 32-byte AES key (base64) |
 | `WEBHOOK_SECRET` | Optional | GitHub webhook HMAC verification |
@@ -188,7 +190,7 @@ npm run deploy
 
 # Frontend to Walrus (polar.wal.app)
 cd ../frontend
-VITE_API_BASE='https://your-org-worker.workers.dev/api' \
+VITE_API_BASE='https://glacier.construct-computer.workers.dev/api' \
 VITE_PORTAL_SUBDOMAIN_BASE='polar.ankush.one' \
   npm run build
 ../worker/walrus-deploy/walrus-deploy --folder dist --network mainnet --epochs max
