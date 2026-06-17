@@ -23,6 +23,15 @@ export const LANDING_INTRO = {
   ],
 } as const
 
+export const LANDING_DEMO = {
+  headline: {
+    plain: 'See Polar ',
+    accent: 'in Action',
+  } satisfies SplitHeadline,
+  description: 'Watch a full deploy from GitHub sign-in to a live Walrus preview URL.',
+  urlBar: 'polar.wal.app',
+} as const
+
 export const LANDING_WORKFLOW = {
   headline: {
     plain: 'From Push to ',

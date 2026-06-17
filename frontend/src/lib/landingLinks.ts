@@ -11,6 +11,24 @@ export const LANDING_LINKS = {
   ],
 } as const
 
+/** YouTube watch URL → privacy-friendly embed URL */
+export function youtubeEmbedUrl(watchUrl: string): string {
+  try {
+    const url = new URL(watchUrl)
+    if (url.hostname === 'youtu.be') {
+      const id = url.pathname.replace(/^\//, '')
+      if (id) return `https://www.youtube-nocookie.com/embed/${id}`
+    }
+    if (url.hostname.includes('youtube.com')) {
+      const id = url.searchParams.get('v')
+      if (id) return `https://www.youtube-nocookie.com/embed/${id}`
+    }
+  } catch {
+    // fall through
+  }
+  return watchUrl
+}
+
 export function teamAvatarUrl(handle: string) {
   return `https://unavatar.io/twitter/${handle}`
 }

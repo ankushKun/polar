@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { LANDING_WORKFLOW } from '../../content/landingContent'
 import { cn } from '../../lib/utils'
 import { LandingAccentPanel } from './LandingAccentPanel'
+import { BrowserTrafficLights } from './BrowserTrafficLights'
 import {
   getStaggerItemVariants,
   LANDING_TRANSITION,
@@ -101,11 +102,7 @@ function LiveStage({
       </p>
       <div className="mt-2.5 overflow-hidden rounded-lg border border-border bg-surface/40">
         <div className="flex items-center gap-2 border-b border-divider px-3 py-2">
-          <span className="flex gap-1" aria-hidden>
-            <span className="h-2 w-2 rounded-full bg-white/15" />
-            <span className="h-2 w-2 rounded-full bg-white/15" />
-            <span className="h-2 w-2 rounded-full bg-white/15" />
-          </span>
+          <BrowserTrafficLights size="sm" />
           <div className="landing-live-pulse min-w-0 flex-1 rounded-md border border-divider bg-landing/80 px-2.5 py-1">
             <div className="flex items-center gap-1.5 min-w-0">
               <span className="relative flex h-2 w-2 shrink-0" aria-hidden>

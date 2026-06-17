@@ -1,6 +1,7 @@
 import { LandingHeader } from '../components/landing/LandingHeader'
 import { LandingHero } from '../components/landing/LandingHero'
 import { LandingFade } from '../components/landing/LandingFade'
+import { LandingDemo } from '../components/landing/LandingDemo'
 import { LandingIntro } from '../components/landing/LandingIntro'
 import { LandingWorkflow } from '../components/landing/LandingWorkflow'
 import { LandingFeatures } from '../components/landing/LandingFeatures'
@@ -20,6 +21,7 @@ export default function Home() {
       <div className="relative">
         <div className="app-gradient fixed inset-0 pointer-events-none -z-10" aria-hidden />
         <LandingFade />
+        <LandingDemo />
         <LandingIntro />
         <LandingWorkflow />
         <LandingFeatures />

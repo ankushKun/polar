@@ -12,7 +12,7 @@ const STACK_HREF: Record<'walrus' | 'sui', string> = {
 
 export function LandingIntro() {
   return (
-    <LandingSection variant="narrow" className="-mt-8 md:-mt-12 pt-20 md:pt-28">
+    <LandingSection variant="narrow" className="-mt-4 md:-mt-6 pt-12 md:pt-16">
       <LandingReveal>
         <LandingSectionHeading headline={LANDING_INTRO.headline} align="center" />
       </LandingReveal>

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { LANDING_LINKS } from '../../lib/landingLinks'
 import { cn } from '../../lib/utils'
 
 export function LandingHeader({ heroSentinelId }: { heroSentinelId: string }) {
@@ -35,14 +34,6 @@ export function LandingHeader({ heroSentinelId }: { heroSentinelId: string }) {
           <span className="font-semibold tracking-tight">Polar</span>
         </Link>
         <div className="flex items-center gap-5">
-          <a
-            href={LANDING_LINKS.demo}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-medium text-white/80 hover:text-white transition-colors"
-          >
-            Demo
-          </a>
           {isAuthenticated ? (
             <Link to="/dashboard" className="text-sm font-medium text-white/80 hover:text-white transition-colors">
               Dashboard
