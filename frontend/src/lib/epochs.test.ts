@@ -3,6 +3,7 @@ import {
   approxWalStorageEndDate,
   effectiveEpochCount,
   getWalrusStorageStatus,
+  shouldShowPipelineStatusBadge,
   storageStatusPriority,
 } from './epochs'
 
@@ -52,6 +53,22 @@ describe('getWalrusStorageStatus', () => {
     const result = getWalrusStorageStatus(baseDeployment, now)
     expect(result.status).toBe('expired')
     expect(result.daysRemaining).toBeLessThanOrEqual(0)
+  })
+})
+
+describe('shouldShowPipelineStatusBadge', () => {
+  it('hides Live when storage is expired', () => {
+    expect(shouldShowPipelineStatusBadge('deployed', 'expired')).toBe(false)
+  })
+
+  it('shows Live when storage is active or expiring soon', () => {
+    expect(shouldShowPipelineStatusBadge('deployed', 'active')).toBe(true)
+    expect(shouldShowPipelineStatusBadge('deployed', 'expiring_soon')).toBe(true)
+  })
+
+  it('always shows non-deployed pipeline statuses', () => {
+    expect(shouldShowPipelineStatusBadge('building', 'expired')).toBe(true)
+    expect(shouldShowPipelineStatusBadge('failed', null)).toBe(true)
   })
 })
 

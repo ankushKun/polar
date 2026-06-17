@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { listDeployments, type Deployment } from '../lib/api'
 import { portalViewLabel } from '../lib/portal'
 import { encodeRepoUrl, repoDisplay } from '../lib/repos'
-import { getWalrusStorageStatus, storageStatusPriority } from '../lib/epochs'
+import { getWalrusStorageStatus, shouldShowPipelineStatusBadge, storageStatusPriority } from '../lib/epochs'
 import { WalrusStorageStatusBadge } from '../components/WalrusStorageStatusBadge'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -147,7 +147,10 @@ export default function Dashboard() {
             const latest = project.latest
             const live = project.live
             const liveStorage = live ? getWalrusStorageStatus(live) : null
+            const latestStorage = latest?.status === 'deployed' ? getWalrusStorageStatus(latest) : null
             const s = latest ? STATUS[latest.status] || STATUS.queued : STATUS.queued
+            const showLatestStatusBadge =
+              latest && shouldShowPipelineStatusBadge(latest.status, latestStorage?.status)
             const total = project.deployments.length
             const liveCount = project.deployments.filter((d) => d.status === 'deployed').length
             const failedCount = project.deployments.filter((d) => d.status === 'failed').length
@@ -164,9 +167,11 @@ export default function Dashboard() {
                       <span className="text-base font-semibold text-white group-hover:text-primary transition-colors">
                         {project.name}
                       </span>
-                      <Badge variant={s.color} className="gap-1.5 uppercase tracking-wider text-[10px]">
-                        {s.icon} {s.label}
-                      </Badge>
+                      {showLatestStatusBadge && (
+                        <Badge variant={s.color} className="gap-1.5 uppercase tracking-wider text-[10px]">
+                          {s.icon} {s.label}
+                        </Badge>
+                      )}
                       {liveStorage && (
                         <WalrusStorageStatusBadge status={liveStorage.status} />
                       )}

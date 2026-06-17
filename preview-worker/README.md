@@ -48,13 +48,23 @@ These commands deploy **only** the worker named `polar` in `preview-worker/wrang
 
 ### If you still want GitHub → Cloudflare
 
-Skip the default “Deploy” wizard for the repo root. After the project exists, set **Deploy command** to:
+Cloudflare clones with submodules enabled. The `worker/walrus-deploy` submodule must use an HTTPS URL (see `.gitmodules`) so CI can fetch it without SSH keys.
+
+Set **Build command** to:
 
 ```bash
-cd preview-worker && npm ci && npx wrangler deploy
+npm ci --prefix preview-worker
 ```
 
-Leave **Build command** empty. That runs only the preview worker on push; it still does not deploy `worker/` or `frontend/`.
+Set **Deploy command** to:
+
+```bash
+npx wrangler deploy --config preview-worker/wrangler.jsonc
+```
+
+Do **not** use `npm run install:all` here — that installs worker and frontend too, and is unnecessary for the preview worker.
+
+Leave **Root directory** as `/` (repo root). The deploy command above targets only `preview-worker/wrangler.jsonc`.
 
 ## Local dev
 

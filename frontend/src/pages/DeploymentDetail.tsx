@@ -18,6 +18,7 @@ import { cn } from '../lib/utils'
 import {
   getWalrusStorageStatus,
   formatStorageEndLabel,
+  shouldShowPipelineStatusBadge,
   walrusRetentionCalendarDays,
 } from '../lib/epochs'
 import { WalrusStorageStatusBadge } from '../components/WalrusStorageStatusBadge'
@@ -221,6 +222,7 @@ export default function DeploymentDetail() {
 
   const s = STATUS[d.status] || STATUS.queued
   const storage = d.status === 'deployed' ? getWalrusStorageStatus(d) : null
+  const showPipelineBadge = shouldShowPipelineStatusBadge(d.status, storage?.status)
   const needsStorageRenew = storage?.status === 'expired' || storage?.status === 'expiring_soon'
   const redeployLabel = needsStorageRenew ? 'Renew site' : 'Redeploy'
   const redeployingLabel = needsStorageRenew ? 'Renewing...' : 'Redeploying...'
@@ -266,10 +268,14 @@ export default function DeploymentDetail() {
                     <span className="flex items-center gap-1.5"><Globe className="w-4 h-4" /> {d.network === 'testnet' ? 'Testnet' : 'Mainnet'}</span>
                   </div>
                 </div>
-                <Badge variant={s.color} className="text-sm py-1 px-3 gap-2 uppercase tracking-widest font-bold">
-                  {s.icon} {s.label}
-                </Badge>
-                {storage && <WalrusStorageStatusBadge status={storage.status} className="text-sm py-1 px-3" />}
+                <div className="flex items-center gap-2 shrink-0">
+                  {showPipelineBadge && (
+                    <Badge variant={s.color} className="text-sm py-1 px-3 gap-2 uppercase tracking-widest font-bold">
+                      {s.icon} {s.label}
+                    </Badge>
+                  )}
+                  {storage && <WalrusStorageStatusBadge status={storage.status} className="text-sm py-1 px-3" />}
+                </div>
               </div>
 
               {needsStorageRenew && storage && (

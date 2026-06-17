@@ -25,6 +25,7 @@ import {
   MAINNET_DAYS_PER_EPOCH,
   getWalrusStorageStatus,
   formatStorageEndLabel,
+  shouldShowPipelineStatusBadge,
   storageStatusPriority,
 } from '../lib/epochs'
 import { WalrusStorageStatusBadge } from '../components/WalrusStorageStatusBadge'
@@ -370,7 +371,10 @@ export default function ProjectDetail() {
   }
 
   const latest = deployments[0]
+  const latestStorage = latest?.status === 'deployed' ? getWalrusStorageStatus(latest) : null
   const latestStatus = latest ? STATUS[latest.status] || STATUS.queued : null
+  const showLatestStatusBadge =
+    latest && shouldShowPipelineStatusBadge(latest.status, latestStorage?.status)
   const branchHead = branchCommits[0] || null
   const hasActiveDeployment = deployments.some((d) => ['queued', 'building', 'built', 'deploying'].includes(d.status))
   const knownLatestMismatch = !!(latest?.commitSha && branchHead?.sha && latest.commitSha !== branchHead.sha)
@@ -490,7 +494,7 @@ export default function ProjectDetail() {
           </a>
         </div>
         <div className="flex items-center gap-3">
-          {latestStatus && (
+          {showLatestStatusBadge && latestStatus && (
             <Badge variant={latestStatus.color} className="text-sm py-1 px-3 gap-2 uppercase tracking-widest font-bold">
               {latestStatus.icon} {latestStatus.label}
             </Badge>
@@ -700,6 +704,8 @@ export default function ProjectDetail() {
           ) : (
             deployments.map((d) => {
               const s = STATUS[d.status] || STATUS.queued
+              const deploymentStorage = d.status === 'deployed' ? getWalrusStorageStatus(d) : null
+              const showPipelineBadge = shouldShowPipelineStatusBadge(d.status, deploymentStorage?.status)
               return (
                 <Link
                   key={d.id}
@@ -709,9 +715,11 @@ export default function ProjectDetail() {
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-3">
-                        <Badge variant={s.color} className="gap-1.5 uppercase tracking-wider text-[10px]">
-                          {s.icon} {s.label}
-                        </Badge>
+                        {showPipelineBadge && (
+                          <Badge variant={s.color} className="gap-1.5 uppercase tracking-wider text-[10px]">
+                            {s.icon} {s.label}
+                          </Badge>
+                        )}
                         <span className="text-xs text-textMuted font-mono">{d.id.slice(0, 8)}...</span>
                       </div>
                       <div className="flex items-center gap-4 text-xs font-medium text-textMuted">
@@ -733,12 +741,9 @@ export default function ProjectDetail() {
                             <span className="font-mono">{d.base36Url}</span>
                           </div>
                         )}
-                        {d.status === 'deployed' && (() => {
-                          const st = getWalrusStorageStatus(d)
-                          return st.status !== 'active' && st.status !== 'unknown' ? (
-                            <WalrusStorageStatusBadge status={st.status} />
-                          ) : null
-                        })()}
+                        {d.status === 'deployed' && deploymentStorage && deploymentStorage.status !== 'active' && deploymentStorage.status !== 'unknown' ? (
+                          <WalrusStorageStatusBadge status={deploymentStorage.status} />
+                        ) : null}
                       </div>
                     </div>
                     <div className="text-textMuted group-hover:text-white transition-colors">
