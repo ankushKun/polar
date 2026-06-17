@@ -13,6 +13,12 @@ import { Button } from '../components/ui/Button'
 import { Spinner } from '../components/ui/Spinner'
 import { Copy, KeyRound, RefreshCw, Trash2 } from 'lucide-react'
 
+function maskApiKey(token: string): string {
+  if (token.length <= 20) return token
+  const edge = Math.max(8, Math.floor(token.length / 4))
+  return `${token.slice(0, edge)}*******${token.slice(-edge)}`
+}
+
 export default function Agents() {
   const { isAuthenticated, login, devLogin, isConnecting, devAuthAvailable } = useAuth()
   const [status, setStatus] = useState<AgentTokenStatus | null>(null)
@@ -50,7 +56,13 @@ export default function Agents() {
     setTimeout(() => setCopied(null), 2000)
   }
 
-  async function handleGenerate() {
+  async function handleGenerate(regenerate = false) {
+    if (regenerate) {
+      const ok = confirm(
+        'Regenerate your API key? The current key will stop working immediately. Copy the new key before leaving this page.',
+      )
+      if (!ok) return
+    }
     setBusy(true)
     setError(null)
     try {
@@ -151,7 +163,7 @@ export default function Agents() {
                 <p className="text-xs font-medium uppercase tracking-wide text-textMuted mb-2">
                   Copy now — shown once
                 </p>
-                <code className="block break-all text-sm text-text font-mono">{revealedToken}</code>
+                <code className="block break-all text-sm text-text font-mono">{maskApiKey(revealedToken)}</code>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
                     type="button"
@@ -171,7 +183,7 @@ export default function Agents() {
             )}
 
             <div className="flex flex-wrap gap-2">
-              <Button type="button" onClick={() => void handleGenerate()} disabled={busy}>
+              <Button type="button" onClick={() => void handleGenerate(true)} disabled={busy}>
                 <RefreshCw className="w-4 h-4 mr-1.5" />
                 {status.configured ? 'Regenerate key' : 'Generate key'}
               </Button>

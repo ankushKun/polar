@@ -73,7 +73,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 w-full">{children}</main>
+        <main className="flex-1 w-full pb-10">{children}</main>
 
         <WalletFooter />
       </div>

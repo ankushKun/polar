@@ -36,10 +36,25 @@ export default function WalletFooter() {
     return () => { cancelled = true; clearInterval(i) }
   }, [])
 
-  if (!info || !info.address) return null
+  if (!info || !info.address) {
+    return (
+      <footer className="mt-auto pt-8 pb-12 border-t border-divider text-xs text-textMuted text-center">
+        <a href="/" className="hover:text-text transition-colors">Polar</a>
+        <span className="mx-2 text-border">·</span>
+        <a
+          href="https://github.com/ankushKun/polar"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-text transition-colors"
+        >
+          GitHub
+        </a>
+      </footer>
+    )
+  }
 
   return (
-    <footer className="mt-12 py-4 border-t border-divider text-sm text-textMuted flex flex-wrap gap-6 items-center justify-center">
+    <footer className="mt-auto pt-8 pb-12 border-t border-divider text-sm text-textMuted flex flex-wrap gap-6 items-center justify-center">
       <span className="font-medium">Deploy wallet</span>
       <span className="inline-flex items-center gap-1.5">
         <a

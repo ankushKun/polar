@@ -4,6 +4,8 @@ Hosted Polar MCP server library — Streamable HTTP transport and tool registry 
 
 Production endpoint: **https://polar.ankush.one/mcp** (preview-worker apex only).
 
+Unauthenticated **GET** returns documentation: HTML in a browser, Markdown for `curl`/agents (`Accept: text/markdown` or default fetch).
+
 ## Architecture
 
 ```

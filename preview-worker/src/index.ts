@@ -1,5 +1,5 @@
 import { Hono, type Context } from 'hono'
-import { handlePolarMcpRequest } from '@polar/mcp'
+import { handlePolarMcpRequest, serveMcpDocs, shouldServeMcpDocs } from '@polar/mcp'
 import {
   handlePortalRequest,
   handleSubdomainPortalRequest,
@@ -33,8 +33,13 @@ async function handleMcpRoute(c: Context<{ Bindings: PreviewWorkerEnv }>) {
     return c.notFound()
   }
 
+  const req = c.req.raw
+  if (shouldServeMcpDocs(req)) {
+    return serveMcpDocs(req)
+  }
+
   const apiBase = c.env.POLAR_API_BASE?.trim() || 'https://glacier.construct-computer.workers.dev/api'
-  return handlePolarMcpRequest(c.req.raw, {
+  return handlePolarMcpRequest(req, {
     polarApiBase: apiBase,
     getAuthorization: (req) => req.headers.get('Authorization'),
   })
