@@ -80,7 +80,7 @@ export default function WalletFooter() {
   }, [])
 
   return (
-    <div className="mt-auto w-full">
+    <div className="w-full">
       {info?.address && <DeployWalletBar info={info} />}
       <LandingFooter />
     </div>
