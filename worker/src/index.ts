@@ -8,6 +8,7 @@ import webhook from './routes/webhook'
 import github from './routes/github'
 import wallet from './routes/wallet'
 import estimate from './routes/estimate'
+import dev from './routes/dev'
 
 export { BuildContainer }
 
@@ -36,6 +37,8 @@ export interface Env {
   PORTAL_PUBLIC_ORIGIN?: string
   /** e.g. polar.ankush.one — preview URLs become https://{base36}.{host}/ */
   PORTAL_SUBDOMAIN_BASE?: string
+  /** Local only — enables POST /api/dev/login when "true" */
+  DEV_AUTH_BYPASS?: string
 }
 
 const app = new Hono<{ Bindings: Env }>()
@@ -88,6 +91,7 @@ app.get('/api/me', async (c) => {
 app.route('/api', deploy)
 app.route('/api/webhook', webhook)
 app.route('/api/github', github)
+app.route('/api/dev', dev)
 app.route('/api', wallet)
 app.route('/api', estimate)
 

@@ -402,7 +402,7 @@ export default function ProjectDetail() {
 
     walrusRetentionOverview = (
       <Card className={cardBorder}>
-        <CardHeader className="pb-4 border-b border-border/50">
+        <CardHeader className="pb-4 border-b border-divider">
           <CardTitle className="text-sm flex items-center justify-between gap-2 text-textMuted">
             <span className="flex items-center gap-2">
               <Clock className="w-4 h-4" /> Walrus storage (approx.)
@@ -542,7 +542,7 @@ export default function ProjectDetail() {
             )}
 
             {!showUpdateDeployment && latest.commitSha && branchHead?.sha === latest.commitSha && !hasActiveDeployment && (
-              <div className="mb-4 rounded-lg bg-[#276ce4]/10 px-3 py-2 text-xs text-success">
+              <div className="mb-4 rounded-lg bg-primary/15 px-3 py-2 text-xs text-success">
                 Latest deployment matches {project.branch} at {shortSha(branchHead.sha)}.
               </div>
             )}
@@ -620,7 +620,7 @@ export default function ProjectDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Build Config */}
             <Card>
-            <CardHeader className="pb-4 border-b border-border/50">
+            <CardHeader className="pb-4 border-b border-divider">
               <CardTitle className="text-sm flex items-center gap-2 text-textMuted">
                 <Code2 className="w-4 h-4" /> Build Configuration
               </CardTitle>
@@ -638,7 +638,7 @@ export default function ProjectDetail() {
           {/* Storage Details */}
           {latest?.objectId && (
             <Card>
-              <CardHeader className="pb-4 border-b border-border/50">
+              <CardHeader className="pb-4 border-b border-divider">
                 <CardTitle className="text-sm flex items-center gap-2 text-textMuted">
                   <Database className="w-4 h-4" /> Storage Details
                 </CardTitle>
@@ -725,7 +725,7 @@ export default function ProjectDetail() {
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
-                  <CardHeader className="pb-4 border-b border-border/50">
+                  <CardHeader className="pb-4 border-b border-divider">
                     <CardTitle className="text-sm flex items-center gap-2 text-textMuted">
                       <KeyRound className="w-4 h-4" /> Rotate Secret
                     </CardTitle>
@@ -752,7 +752,7 @@ export default function ProjectDetail() {
                 </Card>
 
                 <Card>
-                  <CardHeader className="pb-4 border-b border-border/50">
+                  <CardHeader className="pb-4 border-b border-divider">
                     <CardTitle className="text-sm flex items-center gap-2 text-textMuted">
                       <Upload className="w-4 h-4" /> Import Env File
                     </CardTitle>
@@ -796,9 +796,9 @@ export default function ProjectDetail() {
                     ) : importPreview.names.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
                         {importPreview.names.slice(0, 8).map((name) => (
-                          <span key={name} className="rounded border border-info/30 bg-info/10 px-2 py-0.5 text-[11px] font-mono text-info">
+                          <Badge key={name} variant="info" className="font-mono text-[11px] normal-case tracking-normal">
                             {name}
-                          </span>
+                          </Badge>
                         ))}
                         {importPreview.names.length > 8 && <span className="text-xs text-textMuted">+{importPreview.names.length - 8} more</span>}
                       </div>
@@ -823,7 +823,7 @@ export default function ProjectDetail() {
               )}
 
               <Card>
-                <CardHeader className="pb-4 border-b border-border/50">
+                <CardHeader className="pb-4 border-b border-divider">
                   <CardTitle className="text-sm flex items-center gap-2 text-textMuted">
                     <KeyRound className="w-4 h-4" /> Project Secrets
                   </CardTitle>
@@ -832,7 +832,7 @@ export default function ProjectDetail() {
                   {secrets.length === 0 ? (
                     <div className="py-10 text-center text-textMuted">No secrets configured.</div>
                   ) : (
-                    <div className="divide-y divide-border">
+                    <div className="divide-y divide-divider">
                       {secrets.map((secret) => (
                         <div key={secret.name} className="flex items-center justify-between gap-4 py-4">
                           <div className="min-w-0">

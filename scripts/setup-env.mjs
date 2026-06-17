@@ -3,7 +3,7 @@
  * Bootstrap local env files from examples. Skips files that already exist.
  * Run: npm run setup:env
  */
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { randomBytes } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -37,6 +37,8 @@ GITHUB_CLIENT_SECRET=
 FRONTEND_URL=http://127.0.0.1:3000
 API_PUBLIC_URL=http://127.0.0.1:8787
 
+DEV_AUTH_BYPASS=true
+
 # Uncomment for local build/deploy (copy from Cloudflare worker secrets)
 # SUI_KEYSTORE=
 # SUI_ADDRESS=
@@ -46,7 +48,13 @@ API_PUBLIC_URL=http://127.0.0.1:8787
 })
 
 ensure(join(root, 'frontend/.env.development'), () => {
-  copyFileSync(join(root, 'frontend/.env.development.example'), join(root, 'frontend/.env.development'))
+  writeFileSync(
+    join(root, 'frontend/.env.development'),
+    `# Vite dev — /api proxied to worker :8787
+VITE_DEV_AUTH_BYPASS=true
+VITE_DEV_MOCK_DATA=true
+`,
+  )
 })
 
 ensure(join(root, 'frontend/.env.production'), () => {
@@ -58,8 +66,32 @@ ensure(join(root, 'frontend/.env.production'), () => {
 
 const devVars = join(root, 'worker/.dev.vars')
 if (existsSync(devVars)) {
-  const text = readFileSync(devVars, 'utf8')
+  let text = readFileSync(devVars, 'utf8')
+  if (!/^DEV_AUTH_BYPASS=/m.test(text)) {
+    text = `${text.trimEnd()}\nDEV_AUTH_BYPASS=true\n`
+    writeFileSync(devVars, text)
+    console.log('patch worker/.dev.vars (added DEV_AUTH_BYPASS=true)')
+  }
   if (/^GITHUB_CLIENT_ID=\s*$/m.test(text) || /^GITHUB_CLIENT_ID=$/m.test(text)) {
     console.log('\nNext: add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to worker/.dev.vars for OAuth login.')
+    console.log('Or use Dev login (local) when DEV_AUTH_BYPASS=true — no GitHub app required.')
+  }
+}
+
+const feDev = join(root, 'frontend/.env.development')
+if (existsSync(feDev)) {
+  let text = readFileSync(feDev, 'utf8')
+  let patched = false
+  if (!/^VITE_DEV_AUTH_BYPASS=/m.test(text)) {
+    text = `${text.trimEnd()}\nVITE_DEV_AUTH_BYPASS=true\n`
+    patched = true
+  }
+  if (!/^VITE_DEV_MOCK_DATA=/m.test(text)) {
+    text = `${text.trimEnd()}\nVITE_DEV_MOCK_DATA=true\n`
+    patched = true
+  }
+  if (patched) {
+    writeFileSync(feDev, text)
+    console.log('patch frontend/.env.development (added dev preview flags)')
   }
 }

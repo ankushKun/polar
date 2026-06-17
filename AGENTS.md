@@ -172,13 +172,26 @@ From repo root:
 | --- | --- |
 | `npm run setup:env` | Create `worker/.dev.vars`, `frontend/.env.*` from examples |
 | `npm run install:all` | Install deps in worker, frontend, preview-worker |
-| `npm run dev` | Worker `:8787` + frontend `:5173` (Vite proxies `/api` → worker) |
+| `npm run dev` | Worker `:8787` + frontend `:3000` (Vite proxies `/api` → worker) |
 | `npm run dev:worker` | Worker only |
 | `npm run dev:frontend` | Frontend only |
 | `npm run dev:preview` | Preview worker `:8788` |
 | `npm run build:frontend` | Production frontend build (same env as deploy) |
 
 Frontend local dev does **not** set `VITE_PORTAL_SUBDOMAIN_BASE` — preview links fall back to `/m/` `/t/` path-prefix against local preview worker.
+
+### Preview UI locally (no GitHub OAuth)
+
+GitHub login requires a registered OAuth app in `worker/.dev.vars`. For UI work without that setup:
+
+1. Run `npm run setup:env` (creates or patches `DEV_AUTH_BYPASS=true` and frontend dev flags).
+2. Ensure `worker/.dev.vars` has `JWT_SECRET` set and `DEV_AUTH_BYPASS=true`.
+3. Ensure `frontend/.env.development` has:
+   - `VITE_DEV_AUTH_BYPASS=true` — shows **Dev login (local)** on Dashboard / header
+   - `VITE_DEV_MOCK_DATA=true` — populates Dashboard and Project detail with mock projects/deployments
+4. `npm run dev`, open http://127.0.0.1:3000/dashboard, click **Dev login (local)**.
+
+Worker exposes `POST /api/dev/login` only when `DEV_AUTH_BYPASS=true` (never set in production `wrangler.jsonc`).
 
 ---
 

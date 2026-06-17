@@ -7,7 +7,8 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { getToken, setToken, clearToken, getGithubLoginUrl, fetchMe } from '../lib/api'
+import { devLogin as apiDevLogin, getToken, setToken, clearToken, getGithubLoginUrl, fetchMe } from '../lib/api'
+import { isDevAuthBypassEnabled } from '../lib/devFlags'
 
 type AuthContextValue = {
   isAuthenticated: boolean
@@ -15,7 +16,9 @@ type AuthContextValue = {
   isCheckingProfile: boolean
   isConnecting: boolean
   error: string | null
+  devAuthAvailable: boolean
   login: () => Promise<void>
+  devLogin: () => Promise<void>
   logout: () => void
 }
 
@@ -83,6 +86,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const devLogin = useCallback(async () => {
+    if (!isDevAuthBypassEnabled) return
+    setIsConnecting(true)
+    setError(null)
+    try {
+      const sessionToken = await apiDevLogin()
+      setToken(sessionToken)
+      setTok(sessionToken)
+      setIsCheckingProfile(true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Dev login failed')
+    } finally {
+      setIsConnecting(false)
+    }
+  }, [])
+
   const logout = useCallback(() => {
     clearToken()
     setTok(null)
@@ -97,10 +116,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isCheckingProfile,
       isConnecting,
       error,
+      devAuthAvailable: isDevAuthBypassEnabled,
       login,
+      devLogin,
       logout,
     }),
-    [token, githubLogin, isCheckingProfile, isConnecting, error, login, logout]
+    [token, githubLogin, isCheckingProfile, isConnecting, error, login, devLogin, logout]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

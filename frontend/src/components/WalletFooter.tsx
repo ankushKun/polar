@@ -39,7 +39,7 @@ export default function WalletFooter() {
   if (!info || !info.address) return null
 
   return (
-    <footer className="mt-12 py-4 border-t border-border text-sm text-textMuted flex flex-wrap gap-6 items-center justify-center">
+    <footer className="mt-12 py-4 border-t border-divider text-sm text-textMuted flex flex-wrap gap-6 items-center justify-center">
       <span className="font-medium">Deploy wallet</span>
       <span className="inline-flex items-center gap-1.5">
         <a

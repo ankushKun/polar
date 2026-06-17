@@ -41,7 +41,7 @@ export function SuinsComingSoon({ variant, onOpenTab, hasDeployedSite = true }: 
             : undefined
         }
       >
-        <CardHeader className="pb-3 border-b border-border/50">
+        <CardHeader className="pb-3 border-b border-divider">
           <CardTitle className="text-sm flex items-center justify-between gap-2 text-textMuted">
             <span className="flex items-center gap-2">
               <Globe className="w-4 h-4" /> Custom domain (SuiNS)
@@ -102,7 +102,7 @@ export function SuinsComingSoon({ variant, onOpenTab, hasDeployedSite = true }: 
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="pb-4 border-b border-border/50">
+          <CardHeader className="pb-4 border-b border-divider">
             <CardTitle className="text-sm flex items-center gap-2 text-textMuted">
               <Link2 className="w-4 h-4" /> Assign a name
             </CardTitle>
@@ -133,7 +133,7 @@ export function SuinsComingSoon({ variant, onOpenTab, hasDeployedSite = true }: 
         </Card>
 
         <Card>
-          <CardHeader className="pb-4 border-b border-border/50">
+          <CardHeader className="pb-4 border-b border-divider">
             <CardTitle className="text-sm flex items-center gap-2 text-textMuted">
               <Globe className="w-4 h-4" /> What you&apos;ll be able to do
             </CardTitle>

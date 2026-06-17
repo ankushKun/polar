@@ -194,7 +194,7 @@ export function liveUrlBorderClass(status: WalrusStorageStatus): string {
     case 'expiring_soon':
       return 'bg-warning/10'
     default:
-      return 'bg-[#276ce4]/15'
+      return 'bg-primary/15'
   }
 }
 

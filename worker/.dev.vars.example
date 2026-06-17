@@ -11,6 +11,9 @@ FRONTEND_URL=http://127.0.0.1:3000
 API_PUBLIC_URL=http://127.0.0.1:8787
 # Or set explicitly: GITHUB_REDIRECT_URI=http://127.0.0.1:8787/api/github/callback
 
+# Local UI preview without GitHub OAuth (never set in production wrangler.jsonc)
+DEV_AUTH_BYPASS=true
+
 # Optional — deployment preview worker (personal CF account)
 # PORTAL_PUBLIC_ORIGIN=https://polar.ankush.one
 # PORTAL_SUBDOMAIN_BASE=polar.ankush.one

@@ -17,7 +17,7 @@ export function Tabs({
   className?: string
 }) {
   return (
-    <div className={cn('border-b border-border overflow-x-auto', className)}>
+    <div className={cn('border-b border-divider overflow-x-auto', className)}>
       <div className="flex gap-6 min-w-max">
         {tabs.map((tab) => (
           <button

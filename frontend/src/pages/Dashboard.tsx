@@ -30,7 +30,7 @@ interface Project {
 }
 
 export default function Dashboard() {
-  const { isAuthenticated, login, isConnecting } = useAuth()
+  const { isAuthenticated, login, devLogin, isConnecting, devAuthAvailable } = useAuth()
   const [deployments, setDeployments] = useState<Deployment[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -83,9 +83,25 @@ export default function Dashboard() {
         icon={<GithubIcon className="w-8 h-8 text-primary" />}
         title="Sign in"
         description="Sign in with GitHub to view your projects and deployments."
-        actionLabel="Sign in with GitHub"
-        onAction={() => void login()}
-        loading={isConnecting}
+        action={
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <Button onClick={() => void login()} disabled={isConnecting} size="lg" className="px-8">
+              {isConnecting ? <Spinner className="mr-2" /> : null}
+              {isConnecting ? 'Redirecting…' : 'Sign in with GitHub'}
+            </Button>
+            {devAuthAvailable && (
+              <Button
+                variant="secondary"
+                onClick={() => void devLogin()}
+                disabled={isConnecting}
+                size="lg"
+                className="px-8"
+              >
+                Dev login (local)
+              </Button>
+            )}
+          </div>
+        }
       />
     )
   }

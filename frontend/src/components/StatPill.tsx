@@ -3,9 +3,9 @@ import { cn } from '../lib/utils'
 type StatPillVariant = 'neutral' | 'live' | 'failed'
 
 const VARIANTS: Record<StatPillVariant, string> = {
-  neutral: 'bg-[#d0c5f4]/20 text-[#c5d4f0]',
-  live: 'bg-[#276ce4]/25 text-[#7eb3ff]',
-  failed: 'bg-[#e8a598]/20 text-[#e8a598]',
+  neutral: 'bg-pill-default border-pillBorder-default text-textMuted',
+  live: 'bg-pill-primary border-pillBorder-primary text-accentSoft',
+  failed: 'bg-pill-danger border-pillBorder-danger text-danger',
 }
 
 export function StatPill({
@@ -20,7 +20,7 @@ export function StatPill({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium',
+        'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium',
         VARIANTS[variant],
         className,
       )}

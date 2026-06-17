@@ -6,7 +6,7 @@ import { cn } from '../lib/utils'
 import { Button } from './ui/Button'
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const { isAuthenticated, githubLogin, logout, login, isConnecting } = useAuth()
+  const { isAuthenticated, githubLogin, logout, login, devLogin, isConnecting, devAuthAvailable } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -18,7 +18,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex flex-col relative">
       <div className="app-gradient fixed inset-0 pointer-events-none -z-10" aria-hidden />
       <div className="min-h-screen flex flex-col max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <header className="flex items-center justify-between py-6 border-b border-border mb-8">
+        <header className="flex items-center justify-between py-6 border-b border-divider mb-8">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2.5 text-xl font-bold text-text hover:text-primary transition-colors">
               <img src="/PolarSvg.svg" alt="" className="w-7 h-7" draggable={false} />
@@ -35,12 +35,12 @@ export default function Layout({ children }: { children: ReactNode }) {
 
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
-              <div className="flex items-center gap-3 bg-backgroundSubtle px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-3 bg-pill-default border border-pillBorder-default px-3 py-1.5 rounded-full">
                 <div className="w-2 h-2 rounded-full bg-success" />
                 <span className="text-sm font-medium text-textMuted">
                   {githubLogin ?? 'GitHub'}
                 </span>
-                <div className="w-px h-4 bg-border mx-1" />
+                <div className="w-px h-4 bg-divider mx-1" />
                 <button
                   type="button"
                   onClick={() => {
@@ -53,9 +53,21 @@ export default function Layout({ children }: { children: ReactNode }) {
                 </button>
               </div>
             ) : (
-              <Button type="button" onClick={() => void login()} disabled={isConnecting} size="sm">
-                {isConnecting ? 'Redirecting…' : 'Sign in with GitHub'}
-              </Button>
+              <div className="flex items-center gap-3">
+                {devAuthAvailable && (
+                  <button
+                    type="button"
+                    onClick={() => void devLogin()}
+                    disabled={isConnecting}
+                    className="text-sm font-medium text-accentSoft hover:text-text transition-colors disabled:opacity-60"
+                  >
+                    Dev login
+                  </button>
+                )}
+                <Button type="button" onClick={() => void login()} disabled={isConnecting} size="sm">
+                  {isConnecting ? 'Redirecting…' : 'Sign in with GitHub'}
+                </Button>
+              </div>
             )}
           </div>
         </header>

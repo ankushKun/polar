@@ -445,7 +445,7 @@ export default function Deploy() {
           </Card>
         ) : (
           <Card className="flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-border bg-surface/50 space-y-3">
+            <div className="p-4 border-b border-divider bg-surface/50 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <GithubIcon className="w-4 h-4" />
@@ -486,7 +486,7 @@ export default function Deploy() {
                   {repos.length === 0 ? 'No repositories found.' : 'No matching repos.'}
                 </div>
               ) : (
-                <div className="divide-y divide-border">
+                <div className="divide-y divide-divider">
                   {filteredRepos.slice(0, 50).map((repo) => {
                     const key = repo.full_name
                     const fw = frameworks[key] || { framework: null, color: null, pm: 'unknown' }
@@ -546,7 +546,7 @@ export default function Deploy() {
         <div className="w-full lg:w-[420px] lg:flex-shrink-0 space-y-6">
           
           <Card className="overflow-hidden border-border border-l-2 border-l-primary/50">
-            <div className="p-4 bg-accent/50 border-b border-border flex items-center gap-3">
+            <div className="p-4 bg-accent/50 border-b border-divider flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary">
                 <Rocket className="w-4 h-4" />
               </div>
@@ -746,7 +746,7 @@ export default function Deploy() {
 
               {/* Advanced Settings Form */}
               {showAdvanced && (
-                <div className="space-y-4 pt-2 border-t border-border/50">
+                <div className="space-y-4 pt-2 border-t border-divider">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-textMuted">Site Name (Optional)</label>
                     <Input value={siteName} onChange={(e) => setSiteName(e.target.value)} placeholder="my-awesome-site" />
@@ -770,7 +770,7 @@ export default function Deploy() {
                 </div>
               )}
 
-              <div className="space-y-3 pt-2 border-t border-border/50">
+              <div className="space-y-3 pt-2 border-t border-divider">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <KeyRound className="w-4 h-4 text-textMuted" />
@@ -817,9 +817,9 @@ export default function Deploy() {
                 ) : envNames.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
                     {envNames.slice(0, 8).map((name) => (
-                      <span key={name} className="rounded border border-info/30 bg-info/10 px-2 py-0.5 text-[11px] font-mono text-info">
+                      <Badge key={name} variant="info" className="font-mono text-[11px] normal-case tracking-normal">
                         {name}
-                      </span>
+                      </Badge>
                     ))}
                     {envNames.length > 8 && <span className="text-xs text-textMuted">+{envNames.length - 8} more</span>}
                   </div>
@@ -836,7 +836,7 @@ export default function Deploy() {
               )}
 
               {/* Cost Estimator */}
-              <div className="pt-4 border-t border-border">
+              <div className="pt-4 border-t border-divider">
                 {!estimate ? (
                   <Button
                     variant="secondary"
@@ -886,16 +886,16 @@ export default function Deploy() {
 
               {estimateLogsOpen && (
                 <div className="rounded-lg border border-border overflow-hidden bg-black flex flex-col min-h-[220px] max-h-[min(480px,50vh)]">
-                  <div className="bg-surface border-b border-border px-3 py-2 flex items-center justify-between gap-2">
+                  <div className="bg-surface border-b border-divider px-3 py-2 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-xs font-medium text-textMuted">
                       <Terminal className="w-3.5 h-3.5" />
                       Cost estimate — build output
                     </div>
                     {estimating && (
-                      <span className="text-[10px] font-medium text-warning bg-warning/10 px-2 py-0.5 rounded-full flex items-center gap-1.5">
+                      <Badge variant="warning" className="gap-1.5 normal-case text-[10px]">
                         <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse" />
                         Running
-                      </span>
+                      </Badge>
                     )}
                   </div>
                   <div className="flex-1 p-3 overflow-x-auto overflow-y-auto font-mono text-xs leading-relaxed min-h-0">

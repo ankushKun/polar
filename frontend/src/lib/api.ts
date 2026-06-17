@@ -1,5 +1,13 @@
 const API_BASE = import.meta.env.VITE_API_BASE || '/api'
 
+import { isDevMockDataEnabled } from './devFlags'
+import {
+  mockFetchMe,
+  mockGetProject,
+  mockListDeployments,
+  mockListProjects,
+} from '../dev/mockData'
+
 export function getToken(): string | null {
   return localStorage.getItem('polar_token')
 }
@@ -23,6 +31,7 @@ async function authFetch(path: string, options: RequestInit = {}): Promise<Respo
 }
 
 export async function fetchMe(): Promise<{ user_id: string; github_login: string | null }> {
+  if (isDevMockDataEnabled) return mockFetchMe()
   const resp = await authFetch('/me')
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}))
@@ -40,6 +49,17 @@ export async function getGithubLoginUrl(): Promise<string> {
   }
   const data = (await resp.json()) as { url: string }
   return data.url
+}
+
+/** Local dev only — requires worker DEV_AUTH_BYPASS=true */
+export async function devLogin(): Promise<string> {
+  const resp = await fetch(`${API_BASE}/dev/login`, { method: 'POST' })
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}))
+    throw new Error((err as { error?: string }).error || 'dev login failed')
+  }
+  const data = (await resp.json()) as { token: string }
+  return data.token
 }
 
 // ── Projects ──
@@ -65,6 +85,7 @@ export interface ProjectSecret {
 }
 
 export async function listProjects(): Promise<Project[]> {
+  if (isDevMockDataEnabled) return mockListProjects()
   const resp = await authFetch('/projects')
   if (!resp.ok) { const err = await resp.json(); throw new Error(err.error || 'failed to list projects') }
   const data = await resp.json()
@@ -72,6 +93,7 @@ export async function listProjects(): Promise<Project[]> {
 }
 
 export async function getProject(id: string): Promise<{ project: Project; deployments: Deployment[] }> {
+  if (isDevMockDataEnabled) return mockGetProject(id)
   const resp = await authFetch(`/projects/${id}`)
   if (!resp.ok) { const err = await resp.json(); throw new Error(err.error || 'project not found') }
   return resp.json()
@@ -152,6 +174,7 @@ export async function getDeployment(id: string): Promise<Deployment> {
 }
 
 export async function listDeployments(limit = 20, offset = 0): Promise<Deployment[]> {
+  if (isDevMockDataEnabled) return mockListDeployments()
   const resp = await authFetch(`/deployments?limit=${limit}&offset=${offset}`)
   if (!resp.ok) { const err = await resp.json(); throw new Error(err.error || 'failed to list') }
   const data = await resp.json()

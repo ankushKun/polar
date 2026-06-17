@@ -12,6 +12,7 @@ import { Spinner } from '../components/ui/Spinner'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { DetailRow } from '../components/DetailRow'
 import { DeploymentStatusBadge } from '../components/DeploymentStatusBadge'
+import { Badge } from '../components/ui/Badge'
 import { LiveUrlCard } from '../components/LiveUrlCard'
 import { GithubIcon } from '../components/icons/GithubIcon'
 import {
@@ -295,7 +296,7 @@ export default function DeploymentDetail() {
             </div>
 
             {/* Quick Actions Footer */}
-            <div className="bg-surface/50 border-t border-border px-6 py-4 flex items-center justify-end gap-3 rounded-b-xl flex-wrap">
+            <div className="bg-surface/50 border-t border-divider px-6 py-4 flex items-center justify-end gap-3 rounded-b-xl flex-wrap">
               {d.status === 'deployed' && d.base36Url && (
                 <a
                   href={d.viewUrl ?? portalViewUrl(d.base36Url, d.network)}
@@ -330,15 +331,15 @@ export default function DeploymentDetail() {
 
           {/* Terminal / Logs */}
           <Card className="border-border overflow-hidden bg-black flex flex-col min-h-[400px]">
-            <div className="bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
+            <div className="bg-surface border-b border-divider px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-medium text-textMuted">
                 <Terminal className="w-4 h-4" /> Build Logs
               </div>
               {isLive && (
-                <div className="flex items-center gap-2 text-xs font-medium text-warning bg-warning/10 px-2.5 py-1 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-warning animate-pulse"></span>
+                <Badge variant="warning" className="gap-1.5 normal-case">
+                  <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />
                   Live
-                </div>
+                </Badge>
               )}
             </div>
             <div className="flex-1 flex flex-col min-h-0">
@@ -364,7 +365,7 @@ export default function DeploymentDetail() {
         {/* Right Column (Metadata) */}
         <div className="space-y-6">
           <Card>
-            <CardHeader className="pb-4 border-b border-border/50">
+            <CardHeader className="pb-4 border-b border-divider">
               <CardTitle className="text-sm flex items-center gap-2 text-textMuted">
                 <Database className="w-4 h-4" /> Deployment Details
               </CardTitle>
