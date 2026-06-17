@@ -7,7 +7,8 @@
     "dev": "wrangler dev --port 8788",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "test:portal": "tsx scripts/test-portal.ts"
+    "test:portal": "tsx scripts/test-portal.ts",
+    "test:url-rewrite": "tsx scripts/test-url-rewrite.ts"
   },
   "dependencies": {
     "@mysten/bcs": "^2.1.0",

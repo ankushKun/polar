@@ -3,9 +3,10 @@ import { getPortalFetcher } from './portal-fetcher'
 import { invalidSiteId } from './errors'
 import type { WalrusNetwork } from './types'
 import {
-  injectBaseTag,
   parsePortalRequestPath,
   rewriteLocationHeader,
+  rewritePortalCss,
+  rewritePortalHtml,
 } from './urls'
 
 export async function handlePortalRequest(
@@ -20,7 +21,6 @@ export async function handlePortalRequest(
   if (!objectId) return invalidSiteId()
 
   const portalPrefix = `/${networkPrefix}/${parsed.base36}`
-  const baseHref = `${portalPrefix}/`
 
   try {
     const fetcher = getPortalFetcher(network)
@@ -38,10 +38,18 @@ export async function handlePortalRequest(
     const contentType = finalResponse.headers.get('Content-Type') ?? ''
     if (contentType.includes('text/html')) {
       const html = await finalResponse.text()
-      const withBase = injectBaseTag(html, baseHref)
+      const rewritten = rewritePortalHtml(html, portalPrefix)
       const headers = new Headers(finalResponse.headers)
       headers.delete('Content-Length')
-      return new Response(withBase, { status: finalResponse.status, headers })
+      return new Response(rewritten, { status: finalResponse.status, headers })
+    }
+
+    if (contentType.includes('text/css')) {
+      const css = await finalResponse.text()
+      const rewritten = rewritePortalCss(css, portalPrefix)
+      const headers = new Headers(finalResponse.headers)
+      headers.delete('Content-Length')
+      return new Response(rewritten, { status: finalResponse.status, headers })
     }
 
     return finalResponse
