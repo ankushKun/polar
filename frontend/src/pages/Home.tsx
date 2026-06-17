@@ -1,18 +1,9 @@
-import { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import ButtonBg from '/ButtonBgPng.webp'
 
 export default function Home() {
-  const navigate = useNavigate()
-  const { isAuthenticated, githubLogin, isCheckingProfile, login, isConnecting } = useAuth()
-  const isGithubConnected = isAuthenticated && !!githubLogin
-
-  useEffect(() => {
-    if (isGithubConnected && !isCheckingProfile) {
-      navigate('/dashboard', { replace: true })
-    }
-  }, [isGithubConnected, isCheckingProfile, navigate])
+  const { isAuthenticated, isCheckingProfile, login, isConnecting } = useAuth()
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-[#050B14]">
@@ -54,25 +45,27 @@ export default function Home() {
 
       {/* Button - Moved to 85% from top (z-30) */}
       <div className="absolute top-[50vh] sm:top-[68vh] left-1/2 -translate-x-1/2 z-30">
-        {!isGithubConnected ? (
+        {isAuthenticated ? (
+          <Link to="/dashboard">
+            <button
+              type="button"
+              disabled={isCheckingProfile}
+              className="relative group transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center px-12 py-5 font-sans font-medium text-lg sm:text-xl text-white drop-shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+              style={{ backgroundImage: `url(${ButtonBg})`, backgroundSize: '100% 100%', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }}
+            >
+              {isCheckingProfile ? 'Loading…' : 'Go to Dashboard'}
+            </button>
+          </Link>
+        ) : (
           <button
             type="button"
             onClick={() => void login()}
-            disabled={isConnecting || isCheckingProfile}
+            disabled={isConnecting}
             className="relative group transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center px-9 sm:px-16 lg:px-24 py-12 sm:py-10 lg:py-12 font-normal text-lg sm:text-2xl md:text-3xl text-white drop-shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
             style={{ backgroundImage: `url(${ButtonBg})`, backgroundSize: "100%", backgroundRepeat: "no-repeat", backgroundPosition: "center" }}
           >
-            {isCheckingProfile ? 'Checking GitHub…' : isConnecting ? 'Redirecting…' : 'Connect GitHub'}
+            {isConnecting ? 'Redirecting…' : 'Connect GitHub'}
           </button>
-        ) : (
-          <Link to="/dashboard">
-            <button
-              className="relative group transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center px-12 py-5 font-sans font-medium text-lg sm:text-xl text-white drop-shadow-lg"
-              style={{ backgroundImage: `url(${ButtonBg})`, backgroundSize: '100% 100%', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }}
-            >
-              Go To Dashboard
-            </button>
-          </Link>
         )}
       </div>
 

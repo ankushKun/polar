@@ -29,6 +29,7 @@ import {
   storageStatusPriority,
 } from '../lib/epochs'
 import { WalrusStorageStatusBadge } from '../components/WalrusStorageStatusBadge'
+import { SuinsComingSoon } from '../components/SuinsComingSoon'
 import {
   WalrusStorageAlert,
   WalrusRenewActions,
@@ -105,7 +106,7 @@ function countCommitsBehind(commits: GithubCommit[], commitSha: string | null | 
   return index > 0 ? index : null
 }
 
-type Tab = 'overview' | 'deployments' | 'secrets'
+type Tab = 'overview' | 'deployments' | 'secrets' | 'suins'
 
 export default function ProjectDetail() {
   const { encodedRepo } = useParams<{ encodedRepo: string }>()
@@ -645,6 +646,18 @@ export default function ProjectDetail() {
           >
             Secrets ({secrets.length})
           </button>
+          <button
+            onClick={() => setActiveTab('suins')}
+            className={cn(
+              "pb-3 text-sm font-medium transition-colors border-b-2 flex items-center gap-2",
+              activeTab === 'suins' ? "text-white border-primary" : "text-textMuted border-transparent hover:text-white"
+            )}
+          >
+            SuiNS
+            <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-normal normal-case tracking-normal">
+              Soon
+            </Badge>
+          </button>
         </div>
       </div>
 
@@ -694,6 +707,12 @@ export default function ProjectDetail() {
             </Card>
           )}
           </div>
+
+          <SuinsComingSoon
+            variant="teaser"
+            onOpenTab={() => setActiveTab('suins')}
+            hasDeployedSite={latest?.status === 'deployed'}
+          />
 
           {walrusRetentionOverview}
         </div>
@@ -755,6 +774,8 @@ export default function ProjectDetail() {
             })
           )}
         </div>
+      ) : activeTab === 'suins' ? (
+        <SuinsComingSoon variant="full" />
       ) : (
         <div className="space-y-6">
           {!hasProjectId ? (
