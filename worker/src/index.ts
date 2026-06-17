@@ -24,20 +24,43 @@ export interface Env {
   API_PUBLIC_URL?: string
   /** Frontend origin for post-login redirect (e.g. https://app.example.com) */
   FRONTEND_URL?: string
+  /** Comma-separated extra CORS origins (e.g. Walrus-hosted frontend) */
+  CORS_ORIGINS?: string
   WEBHOOK_SECRET?: string
   SECRETS_ENCRYPTION_KEY?: string
   SUI_KEYSTORE?: string
   SUI_ADDRESS?: string
   WALRUS_NETWORK?: string
   WALRUS_EPOCHS?: string
+  /** Public origin for deployment preview links (separate preview worker) */
+  PORTAL_PUBLIC_ORIGIN?: string
 }
 
 const app = new Hono<{ Bindings: Env }>()
 
+function trimOrigin(url: string | undefined): string | undefined {
+  const trimmed = url?.trim().replace(/\/+$/, '')
+  return trimmed || undefined
+}
+
+function allowedCorsOrigins(env: Env): Set<string> {
+  const origins = new Set<string>()
+  for (const value of [env.FRONTEND_URL, env.API_PUBLIC_URL]) {
+    const origin = trimOrigin(value)
+    if (origin) origins.add(origin)
+  }
+  for (const part of env.CORS_ORIGINS?.split(',') ?? []) {
+    const origin = trimOrigin(part)
+    if (origin) origins.add(origin)
+  }
+  return origins
+}
+
 app.use('*', cors({
   origin: (origin, c) => {
-    const frontend = c.env.FRONTEND_URL?.trim().replace(/\/+$/, '') || 'https://polar.wal.app'
-    return origin === frontend ? origin : null
+    if (!origin) return null
+    const normalized = origin.replace(/\/+$/, '')
+    return allowedCorsOrigins(c.env).has(normalized) ? origin : null
   },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],

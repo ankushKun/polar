@@ -1,9 +1,18 @@
 # Wrangler loads this file as secrets for `wrangler dev`. Do not commit real values.
+# Run `npm run setup:env` from the repo root to generate worker/.dev.vars.
 
-JWT_SECRET=replace-with-long-random-string
+JWT_SECRET=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
+SECRETS_ENCRYPTION_KEY=
 
-# Match your wrangler vars / GitHub OAuth callback registration
-# FRONTEND_URL=http://127.0.0.1:5173
-# API_PUBLIC_URL=http://127.0.0.1:8787
+# Required for local OAuth + CORS (override production values in wrangler.jsonc)
+FRONTEND_URL=http://127.0.0.1:3000
+API_PUBLIC_URL=http://127.0.0.1:8787
+# Or set explicitly: GITHUB_REDIRECT_URI=http://127.0.0.1:8787/api/github/callback
+
+# Optional — deployment preview worker (personal CF account)
+# PORTAL_PUBLIC_ORIGIN=https://polar.ankushkun.workers.dev
+# SUI_KEYSTORE=
+# SUI_ADDRESS=
+# WEBHOOK_SECRET=

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { getDeployment, deleteDeployment, retryDeployment, redeployDeployment, getToken, type Deployment, type Project, listProjects } from '../lib/api'
+import { portalViewLabel, portalViewUrl } from '../lib/portal'
 import { renderAnsiLogs } from '../lib/ansi'
 import { useSSE } from '../hooks/useSSE'
 import { encodeRepoUrl, repoDisplay } from '../lib/repos'
@@ -14,6 +15,18 @@ import {
   Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Hash, FolderOutput, Code2, Database, LayoutDashboard
 } from 'lucide-react'
 import { cn } from '../lib/utils'
+import {
+  getWalrusStorageStatus,
+  formatStorageEndLabel,
+  walrusRetentionCalendarDays,
+} from '../lib/epochs'
+import { WalrusStorageStatusBadge } from '../components/WalrusStorageStatusBadge'
+import {
+  WalrusStorageAlert,
+  WalrusRenewActions,
+  liveUrlBorderClass,
+  liveUrlTextClass,
+} from '../components/WalrusStorageAlert'
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -154,11 +167,14 @@ export default function DeploymentDetail() {
     }
   }
 
-  async function handleRedeploy() {
+  async function handleRedeploy(epochs?: number | 'max') {
     if (!id) return
     setRedeploying(true)
     try {
-      const { id: newId } = await redeployDeployment(id)
+      const { id: newId } = await redeployDeployment(
+        id,
+        epochs !== undefined ? { epochs } : undefined,
+      )
       navigate(`/deployments/${newId}`)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Redeploy failed')
@@ -204,6 +220,10 @@ export default function DeploymentDetail() {
   }
 
   const s = STATUS[d.status] || STATUS.queued
+  const storage = d.status === 'deployed' ? getWalrusStorageStatus(d) : null
+  const needsStorageRenew = storage?.status === 'expired' || storage?.status === 'expiring_soon'
+  const redeployLabel = needsStorageRenew ? 'Renew site' : 'Redeploy'
+  const redeployingLabel = needsStorageRenew ? 'Renewing...' : 'Redeploying...'
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -249,18 +269,55 @@ export default function DeploymentDetail() {
                 <Badge variant={s.color} className="text-sm py-1 px-3 gap-2 uppercase tracking-widest font-bold">
                   {s.icon} {s.label}
                 </Badge>
+                {storage && <WalrusStorageStatusBadge status={storage.status} className="text-sm py-1 px-3" />}
               </div>
 
+              {needsStorageRenew && storage && (
+                <div className="mt-6">
+                  <WalrusStorageAlert
+                    storage={storage}
+                    base36Url={d.base36Url}
+                    network={d.network}
+                    disabled={ACTIVE_DEPLOYMENT_STATUSES.has(d.status)}
+                    renewing={redeploying}
+                    deployment={d}
+                    onRenew={(epochs) => handleRedeploy(epochs)}
+                  />
+                </div>
+              )}
+
               {/* Success Box */}
-              {d.status === 'deployed' && d.base36Url && (
-                <div className="mt-6 bg-success/10 border border-success/30 rounded-xl p-5">
-                  <div className="text-xs font-semibold text-success uppercase tracking-wider mb-2">Live URL</div>
+              {d.status === 'deployed' && d.base36Url && !needsStorageRenew && (
+                <div className={cn('mt-6 rounded-xl p-5 border', liveUrlBorderClass(storage?.status ?? 'active'))}>
+                  <div className={cn('text-xs font-semibold uppercase tracking-wider mb-2', liveUrlTextClass(storage?.status ?? 'active'))}>Live URL</div>
                   <a
-                    href={`https://${d.base36Url}.wal.app`}
+                    href={d.viewUrl ?? portalViewUrl(d.base36Url, d.network)}
                     target="_blank" rel="noopener noreferrer"
-                    className="group inline-flex items-center gap-2 text-xl font-bold text-success hover:text-success/80 transition-colors break-all"
+                    className={cn(
+                      'group inline-flex items-center gap-2 text-xl font-bold transition-colors break-all hover:opacity-80',
+                      liveUrlTextClass(storage?.status ?? 'active'),
+                    )}
                   >
-                    {d.base36Url}.wal.app
+                    {portalViewLabel(d.base36Url, d.network)}
+                    <ExternalLink className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
+                  </a>
+                </div>
+              )}
+
+              {d.status === 'deployed' && d.base36Url && needsStorageRenew && (
+                <div className={cn('mt-6 rounded-xl p-5 border', liveUrlBorderClass(storage!.status))}>
+                  <div className={cn('text-xs font-semibold uppercase tracking-wider mb-2', liveUrlTextClass(storage!.status))}>
+                    Site URL
+                  </div>
+                  <a
+                    href={d.viewUrl ?? portalViewUrl(d.base36Url, d.network)}
+                    target="_blank" rel="noopener noreferrer"
+                    className={cn(
+                      'group inline-flex items-center gap-2 text-xl font-bold transition-colors break-all hover:opacity-80',
+                      liveUrlTextClass(storage!.status),
+                    )}
+                  >
+                    {portalViewLabel(d.base36Url, d.network)}
                     <ExternalLink className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
                   </a>
                 </div>
@@ -285,10 +342,10 @@ export default function DeploymentDetail() {
                   {retrying ? 'Retrying...' : 'Retry Build'}
                 </Button>
               )}
-              {!ACTIVE_DEPLOYMENT_STATUSES.has(d.status) && d.status !== 'deleted' && (
-                <Button variant="secondary" onClick={handleRedeploy} disabled={redeploying}>
+              {!ACTIVE_DEPLOYMENT_STATUSES.has(d.status) && d.status !== 'deleted' && !needsStorageRenew && (
+                <Button variant="secondary" onClick={() => void handleRedeploy()} disabled={redeploying}>
                   {redeploying ? <Spinner className="mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
-                  {redeploying ? 'Redeploying...' : 'Redeploy'}
+                  {redeploying ? redeployingLabel : redeployLabel}
                 </Button>
               )}
               <Button variant="danger" onClick={handleDelete} disabled={deleting}>
@@ -393,10 +450,42 @@ export default function DeploymentDetail() {
                 <>
                   <div className="h-px bg-border/50 w-full" />
                   <div className="space-y-2">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-textMuted">Storage Details</h4>
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-textMuted">Storage Details</h4>
+                      {storage && <WalrusStorageStatusBadge status={storage.status} />}
+                    </div>
                     <div className="text-xs font-mono text-info break-all bg-info/10 p-2 rounded border border-info/20">
                       ID: {d.objectId}
                     </div>
+                    {storage && storage.endDate && d.status === 'deployed' && (
+                      <div className="text-xs text-textMuted space-y-1">
+                        {storage.status === 'expired' ? (
+                          <p className="text-danger">Likely expired around {formatStorageEndLabel(storage.endDate)}</p>
+                        ) : storage.status === 'expiring_soon' ? (
+                          <p className="text-warning">
+                            Expires around {formatStorageEndLabel(storage.endDate)}
+                            {storage.daysRemaining != null
+                              ? ` (~${Math.ceil(storage.daysRemaining)} days left)`
+                              : ''}
+                          </p>
+                        ) : (
+                          <p>
+                            Active until ~{formatStorageEndLabel(storage.endDate)}
+                            {storage.effectiveEpochs != null && (
+                              <> ({walrusRetentionCalendarDays(d.network, storage.effectiveEpochs)} days / {storage.effectiveEpochs} epochs)</>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {needsStorageRenew && (
+                      <WalrusRenewActions
+                        deployment={d}
+                        disabled={ACTIVE_DEPLOYMENT_STATUSES.has(d.status)}
+                        renewing={redeploying}
+                        onRenew={(epochs) => void handleRedeploy(epochs)}
+                      />
+                    )}
                   </div>
                 </>
               )}

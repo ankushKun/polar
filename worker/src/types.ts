@@ -62,6 +62,8 @@ export interface Deployment {
   error: string | null
   objectId: string | null
   base36Url: string | null
+  /** Computed portal view URL (/m/ or /t/ path); present in API responses only */
+  viewUrl?: string | null
   logs: string
   createdAt: string
   updatedAt: string

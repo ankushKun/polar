@@ -7,6 +7,8 @@ node_modules/
 .env.*
 !.env.example
 !frontend/.env.example
+!frontend/.env.development.example
+!frontend/.env.production.example
 
 worker/.dev.vars
 # Build outputs

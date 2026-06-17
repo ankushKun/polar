@@ -2,7 +2,7 @@
 
 Deploy static sites from GitHub to Walrus on Sui — no wallets, no WAL, no CLI.
 
-Sign in with GitHub OAuth, pick a repo, and Polar builds and deploys it to a permanent `*.wal.app` URL on decentralized storage. Think Vercel, but for Web3.
+Sign in with GitHub OAuth, pick a repo, and Polar builds and deploys it to Walrus on Sui. Each deployment gets a viewable URL on Polar (`/m/{id}/` mainnet, `/t/{id}/` testnet) — no SuiNS name required. Think Vercel, but for Web3.
 
 **[polar.wal.app](https://polar.wal.app)** (the app itself is deployed via Polar)
 
@@ -11,7 +11,7 @@ Sign in with GitHub OAuth, pick a repo, and Polar builds and deploys it to a per
 ## How it works
 
 ```
-GitHub Repo → Cloudflare Container (build) → Walrus Site (deploy) → *.wal.app
+GitHub Repo → Cloudflare Container (build) → Walrus Site (deploy) → Polar portal (/m/ or /t/)
                     ↕
            Cloudflare Worker (API)
                     ↕
@@ -24,7 +24,7 @@ GitHub Repo → Cloudflare Container (build) → Walrus Site (deploy) → *.wal.
 2. **Pick a repo** — Polar auto-detects framework (Next.js, Vite, Astro, Nuxt, SvelteKit, Remix, Angular, etc.) and package manager (npm, pnpm, yarn, bun)
 3. **Configure** — branch, build dir, output dir, secrets (encrypted at rest), storage duration
 4. **Deploy** — Polar clones the repo into an ephemeral Cloudflare Container, installs deps, builds, verifies the output, and publishes to Walrus
-5. **Live** — get a `*.wal.app` URL with SPA routing support
+5. **Live** — preview at `https://polar.ankushkun.workers.dev/m/{siteId}/` or `/t/{siteId}/` (mainnet/testnet). Optionally assign SuiNS for `{name}.wal.app`.
 
 On push to main, webhooks auto-redeploy. Build logs stream in real-time via SSE. Every deployment is pinned to an exact Git commit SHA for verifiable provenance.
 
@@ -129,17 +129,44 @@ cd ../frontend && npm run dev   # Frontend on :5173 with /api proxied to :8787
 | `SUI_KEYSTORE` / `SUI_ADDRESS` | For deploy | Platform wallet for publishing sites |
 | `SECRETS_ENCRYPTION_KEY` | For secrets | 32-byte AES key (base64) |
 | `WEBHOOK_SECRET` | Optional | GitHub webhook HMAC verification |
+| `PORTAL_PUBLIC_ORIGIN` | Yes (prod) | Preview worker URL (e.g. `https://polar.ankushkun.workers.dev`) |
+
+### Deployment previews (separate worker)
+
+Polar splits **app/deploy** and **site preview** across two Cloudflare Workers:
+
+| Worker | Account | Role |
+|--------|---------|------|
+| **glacier** (org) | Org | API, D1, build containers, Walrus deploy |
+| **polar** (preview) | Personal | Walrus Sites portal only — `/m/{id}/`, `/t/{id}/` |
+
+- **UI:** [polar.wal.app](https://polar.wal.app) (Walrus + SuiNS)
+- **Preview links:** `https://polar.ankushkun.workers.dev/m/{base36}/` or `/t/{base36}/` (from API `viewUrl`)
+
+Set `PORTAL_PUBLIC_ORIGIN` on the org worker to the preview worker URL. Deploy the preview worker from [`preview-worker/`](preview-worker/):
+
+```bash
+cd preview-worker && npm install && npx wrangler login && npm run deploy
+```
+
+The public `wal.app` portal only serves mainnet sites with SuiNS names; Polar's preview worker resolves sites by object ID on both networks.
 
 ### Deploy to production
 
 ```bash
-# Worker
+# Org worker (API + builder)
 cd worker
 npx wrangler deploy --keep-vars
 
-# Frontend (build + deploy to Walrus)
+# Preview worker (personal account)
+cd ../preview-worker
+npm run deploy
+
+# Frontend to Walrus (polar.wal.app)
 cd ../frontend
-VITE_API_BASE='https://your-worker.workers.dev/api' npm run build
+VITE_API_BASE='https://your-org-worker.workers.dev/api' \
+VITE_PORTAL_ORIGIN='https://polar.ankushkun.workers.dev' \
+  npm run build
 ../worker/walrus-deploy/walrus-deploy --folder dist --network mainnet --epochs max
 ```
 

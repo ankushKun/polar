@@ -46,12 +46,94 @@ export function approxWalStorageEndDate(
   network: 'mainnet' | 'testnet',
   epochs: number | null | undefined,
 ): Date {
-  const e =
-    epochs != null && Number.isFinite(epochs) && epochs > 0
-      ? epochs
-      : network === 'mainnet'
-        ? 2
-        : 1
+  const e = effectiveEpochCount(network, epochs)
   const days = walrusRetentionCalendarDays(network, e)
   return new Date(new Date(deployedAtIso).getTime() + days * 86_400_000)
+}
+
+export function effectiveEpochCount(
+  network: 'mainnet' | 'testnet',
+  epochs: number | null | undefined,
+): number {
+  if (epochs != null && Number.isFinite(epochs) && epochs > 0) return epochs
+  return network === 'mainnet' ? 2 : 1
+}
+
+export type WalrusStorageStatus = 'active' | 'expiring_soon' | 'expired' | 'unknown'
+
+export interface WalrusStorageStatusInput {
+  status: string
+  createdAt: string
+  network: 'mainnet' | 'testnet'
+  epochs: number | null | undefined
+  objectId?: string | null
+  base36Url?: string | null
+}
+
+export interface WalrusStorageStatusResult {
+  status: WalrusStorageStatus
+  endDate: Date | null
+  daysRemaining: number | null
+  effectiveEpochs: number | null
+}
+
+export const EXPIRING_SOON_DAYS_MAINNET = 7
+export const EXPIRING_SOON_DAYS_TESTNET = 1
+
+export function getWalrusStorageStatus(
+  deployment: WalrusStorageStatusInput,
+  now: Date = new Date(),
+  options?: { expiringSoonDaysMainnet?: number; expiringSoonDaysTestnet?: number },
+): WalrusStorageStatusResult {
+  const unknown: WalrusStorageStatusResult = {
+    status: 'unknown',
+    endDate: null,
+    daysRemaining: null,
+    effectiveEpochs: null,
+  }
+
+  if (deployment.status !== 'deployed') return unknown
+  if (!deployment.objectId && !deployment.base36Url) return unknown
+
+  const effectiveEpochs = effectiveEpochCount(deployment.network, deployment.epochs)
+  const endDate = approxWalStorageEndDate(deployment.createdAt, deployment.network, deployment.epochs)
+  const msRemaining = endDate.getTime() - now.getTime()
+  const daysRemaining = msRemaining / 86_400_000
+
+  if (msRemaining <= 0) {
+    return { status: 'expired', endDate, daysRemaining, effectiveEpochs }
+  }
+
+  const expiringSoonThreshold =
+    deployment.network === 'mainnet'
+      ? (options?.expiringSoonDaysMainnet ?? EXPIRING_SOON_DAYS_MAINNET)
+      : (options?.expiringSoonDaysTestnet ?? EXPIRING_SOON_DAYS_TESTNET)
+
+  if (daysRemaining <= expiringSoonThreshold) {
+    return { status: 'expiring_soon', endDate, daysRemaining, effectiveEpochs }
+  }
+
+  return { status: 'active', endDate, daysRemaining, effectiveEpochs }
+}
+
+export function storageStatusPriority(status: WalrusStorageStatus): number {
+  switch (status) {
+    case 'expired':
+      return 0
+    case 'expiring_soon':
+      return 1
+    case 'active':
+      return 2
+    default:
+      return 3
+  }
+}
+
+export function formatStorageEndLabel(endDate: Date): string {
+  return endDate.toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' })
+}
+
+export function mainnetTierIndexForEpochs(epochs: number): number {
+  const idx = MAINNET_EPOCH_TIERS.findIndex((t) => t.epochs === epochs)
+  return idx >= 0 ? idx : 0
 }

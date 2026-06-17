@@ -46,10 +46,19 @@
     "enabled": true
   },
 
+  "assets": {
+    "directory": "../frontend/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/health"]
+  },
+
   "vars": {
     "WALRUS_NETWORK": "testnet",
     "WALRUS_EPOCHS": "1",
-    "FRONTEND_URL": "https://polar.wal.app",
-    "API_PUBLIC_URL": "https://glacier.construct-computer.workers.dev"
+    "FRONTEND_URL": "https://glacier.construct-computer.workers.dev",
+    "API_PUBLIC_URL": "https://glacier.construct-computer.workers.dev",
+    "PORTAL_PUBLIC_ORIGIN": "https://polar.ankushkun.workers.dev",
+    "CORS_ORIGINS": "https://polar.wal.app"
   }
 }

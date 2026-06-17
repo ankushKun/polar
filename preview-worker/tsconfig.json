@@ -11,13 +11,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "outDir": "dist",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "isolatedModules": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "build-server", "src/portal"]
+  "include": ["src/**/*.ts"]
 }

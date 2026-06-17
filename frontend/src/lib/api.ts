@@ -127,7 +127,7 @@ export interface Deployment {
   /** Walrus storage epochs; null on older deployments */
   epochs: number | null
   status: string; error: string | null
-  objectId: string | null; base36Url: string | null; logs: string
+  objectId: string | null; base36Url: string | null; viewUrl?: string | null; logs: string
   createdAt: string; updatedAt: string
 }
 
@@ -169,8 +169,14 @@ export async function retryDeployment(id: string): Promise<{ id: string; status:
   return resp.json()
 }
 
-export async function redeployDeployment(id: string): Promise<{ id: string; status: string }> {
-  const resp = await authFetch(`/deployments/${id}/redeploy`, { method: 'POST' })
+export async function redeployDeployment(
+  id: string,
+  options?: { epochs?: number | 'max' },
+): Promise<{ id: string; status: string }> {
+  const resp = await authFetch(`/deployments/${id}/redeploy`, {
+    method: 'POST',
+    body: options?.epochs !== undefined ? JSON.stringify({ epochs: options.epochs }) : undefined,
+  })
   if (!resp.ok) { const err = await resp.json(); throw new Error(err.error || 'redeploy failed') }
   return resp.json()
 }

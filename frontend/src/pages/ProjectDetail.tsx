@@ -12,17 +12,28 @@ import {
   importProjectSecrets,
   deleteProjectSecret,
   listRepoCommits,
+  redeployDeployment,
   type Project,
   type Deployment,
   type ProjectSecret,
   type GithubCommit,
 } from '../lib/api'
+import { portalViewLabel, portalViewUrl } from '../lib/portal'
 import { decodeRepoUrl, repoDisplay, encodeRepoUrl, repoOwner, repoName as repoNameFromUrl } from '../lib/repos'
 import {
-  approxWalStorageEndDate,
   walrusRetentionCalendarDays,
   MAINNET_DAYS_PER_EPOCH,
+  getWalrusStorageStatus,
+  formatStorageEndLabel,
+  storageStatusPriority,
 } from '../lib/epochs'
+import { WalrusStorageStatusBadge } from '../components/WalrusStorageStatusBadge'
+import {
+  WalrusStorageAlert,
+  WalrusRenewActions,
+  liveUrlBorderClass,
+  liveUrlTextClass,
+} from '../components/WalrusStorageAlert'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
@@ -109,6 +120,7 @@ export default function ProjectDetail() {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
   const [deleting, setDeleting] = useState(false)
   const [deployingLatest, setDeployingLatest] = useState(false)
+  const [renewingSite, setRenewingSite] = useState(false)
   const [hasProjectId, setHasProjectId] = useState(false)
   const [secretName, setSecretName] = useState('')
   const [secretValue, setSecretValue] = useState('')
@@ -248,6 +260,20 @@ export default function ProjectDetail() {
     }
   }
 
+  async function handleRenewSite(deploymentId: string, epochs?: number | 'max') {
+    setRenewingSite(true)
+    try {
+      const { id } = await redeployDeployment(
+        deploymentId,
+        epochs !== undefined ? { epochs } : undefined,
+      )
+      navigate(`/deployments/${id}`)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Renew failed')
+      setRenewingSite(false)
+    }
+  }
+
   async function handleRotateSecret() {
     if (!project || !hasProjectId) return
     const name = secretName.trim()
@@ -353,44 +379,82 @@ export default function ProjectDetail() {
   const liveDeployment = deployments.find(
     (d) => d.status === 'deployed' && (d.base36Url || d.objectId),
   )
+  const liveStorage = liveDeployment ? getWalrusStorageStatus(liveDeployment) : null
+  const renewTarget = liveDeployment ?? (latest?.status === 'deployed' ? latest : null)
+  const showStorageRenew =
+    !!renewTarget &&
+    (liveStorage?.status === 'expired' || liveStorage?.status === 'expiring_soon')
 
   let walrusRetentionOverview: React.ReactNode = null
-  if (liveDeployment) {
+  if (liveDeployment && liveStorage) {
     const effEpochs =
-      liveDeployment.epochs ?? (liveDeployment.network === 'mainnet' ? 2 : 1)
-    const end = approxWalStorageEndDate(
-      liveDeployment.createdAt,
-      liveDeployment.network,
-      liveDeployment.epochs,
-    )
-    const endLabel = end.toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' })
+      liveStorage.effectiveEpochs ?? (liveDeployment.network === 'mainnet' ? 2 : 1)
+    const endLabel = liveStorage.endDate
+      ? formatStorageEndLabel(liveStorage.endDate)
+      : ''
     const days = walrusRetentionCalendarDays(liveDeployment.network, effEpochs)
     const est = liveDeployment.epochs == null
+    const cardBorder =
+      liveStorage.status === 'expired'
+        ? 'border-danger/40'
+        : liveStorage.status === 'expiring_soon'
+          ? 'border-warning/40'
+          : 'border-border'
+
     walrusRetentionOverview = (
-      <Card className="border-border">
+      <Card className={cardBorder}>
         <CardHeader className="pb-4 border-b border-border/50">
-          <CardTitle className="text-sm flex items-center gap-2 text-textMuted">
-            <Clock className="w-4 h-4" /> Walrus storage (approx.)
+          <CardTitle className="text-sm flex items-center justify-between gap-2 text-textMuted">
+            <span className="flex items-center gap-2">
+              <Clock className="w-4 h-4" /> Walrus storage (approx.)
+            </span>
+            <WalrusStorageStatusBadge status={liveStorage.status} />
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-4 space-y-2">
-          <p className="text-sm text-white leading-relaxed">
-            The live site is stored in Walrus for roughly{' '}
-            <span className="font-semibold text-info">{days} calendar days</span>
-            {liveDeployment.network === 'mainnet' ? (
-              <> (~{effEpochs} epochs × ~{MAINNET_DAYS_PER_EPOCH} days each)</>
-            ) : (
-              <> (~{effEpochs} epoch{effEpochs === 1 ? '' : 's'} × ~1 day each)</>
-            )}
-            {est ? ', estimated from defaults for older deploys.' : '.'}
-          </p>
+        <CardContent className="pt-4 space-y-4">
+          {liveStorage.status === 'expired' && liveStorage.endDate && (
+            <p className="text-sm font-medium text-danger">
+              Storage likely expired around {endLabel}.
+            </p>
+          )}
+          {liveStorage.status === 'expiring_soon' && liveStorage.daysRemaining != null && (
+            <p className="text-sm font-medium text-warning">
+              About {Math.ceil(liveStorage.daysRemaining)} day{Math.ceil(liveStorage.daysRemaining) === 1 ? '' : 's'} remaining — expires around {endLabel}.
+            </p>
+          )}
+          {liveStorage.status === 'active' && (
+            <p className="text-sm text-white leading-relaxed">
+              The live site is stored in Walrus for roughly{' '}
+              <span className="font-semibold text-info">{days} calendar days</span>
+              {liveDeployment.network === 'mainnet' ? (
+                <> (~{effEpochs} epochs × ~{MAINNET_DAYS_PER_EPOCH} days each)</>
+              ) : (
+                <> (~{effEpochs} epoch{effEpochs === 1 ? '' : 's'} × ~1 day each)</>
+              )}
+              {est ? ', estimated from defaults for older deploys.' : '.'}
+            </p>
+          )}
           <p className="text-sm text-textMuted">
-            That points to about{' '}
-            <span className="text-white font-medium">{endLabel}</span>
+            {liveStorage.status === 'active' ? (
+              <>
+                That points to about{' '}
+                <span className="text-white font-medium">{endLabel}</span>
+              </>
+            ) : (
+              <>Original retention window ended around <span className="text-white font-medium">{endLabel}</span>.</>
+            )}
             <span className="block mt-2 text-xs opacity-80">
               Walrus follows Sui epochs; this is a calendar guide from your deploy time, not a guaranteed on-chain timestamp.
             </span>
           </p>
+          {showStorageRenew && renewTarget && (
+            <WalrusRenewActions
+              deployment={renewTarget}
+              disabled={hasActiveDeployment}
+              renewing={renewingSite}
+              onRenew={(epochs) => handleRenewSite(renewTarget.id, epochs)}
+            />
+          )}
         </CardContent>
       </Card>
     )
@@ -430,6 +494,9 @@ export default function ProjectDetail() {
             <Badge variant={latestStatus.color} className="text-sm py-1 px-3 gap-2 uppercase tracking-widest font-bold">
               {latestStatus.icon} {latestStatus.label}
             </Badge>
+          )}
+          {liveStorage && (
+            <WalrusStorageStatusBadge status={liveStorage.status} className="text-sm py-1 px-3" />
           )}
           {showUpdateDeployment && (
             <Button variant="primary" onClick={handleDeployLatest} disabled={deployingLatest} size="sm">
@@ -498,15 +565,35 @@ export default function ProjectDetail() {
               </div>
             )}
 
+            {showStorageRenew && liveStorage && renewTarget && (
+              <div className="mb-4">
+                <WalrusStorageAlert
+                  storage={liveStorage}
+                  base36Url={renewTarget.base36Url}
+                  network={renewTarget.network}
+                  disabled={hasActiveDeployment}
+                  renewing={renewingSite}
+                  deployment={renewTarget}
+                  onRenew={(epochs) => handleRenewSite(renewTarget.id, epochs)}
+                />
+              </div>
+            )}
+
             {latest.status === 'deployed' && latest.base36Url && (
-              <div className="bg-success/10 border border-success/30 rounded-xl p-4">
-                <div className="text-xs font-semibold text-success uppercase tracking-wider mb-1">Live URL</div>
+              <div className={cn('rounded-xl p-4 border', liveUrlBorderClass(liveStorage?.status ?? 'active'))}>
+                <div className={cn('text-xs font-semibold uppercase tracking-wider mb-1', liveUrlTextClass(liveStorage?.status ?? 'active'))}>
+                  {liveStorage?.status === 'expired' ? 'Site URL (storage expired)' : 'Live URL'}
+                </div>
                 <a
-                  href={`https://${latest.base36Url}.wal.app`}
+                  href={latest.viewUrl ?? portalViewUrl(latest.base36Url, latest.network)}
                   target="_blank" rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-2 text-lg font-bold text-success hover:text-success/80 transition-colors break-all"
+                  className={cn(
+                    'group inline-flex items-center gap-2 text-lg font-bold transition-colors break-all',
+                    liveUrlTextClass(liveStorage?.status ?? 'active'),
+                    'hover:opacity-80',
+                  )}
                 >
-                  {latest.base36Url}.wal.app
+                  {portalViewLabel(latest.base36Url, latest.network)}
                   <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
                 </a>
               </div>
@@ -592,11 +679,11 @@ export default function ProjectDetail() {
                 </div>
                 {latest.base36Url && (
                   <a
-                    href={`https://${latest.base36Url}.wal.app`}
+                    href={latest.viewUrl ?? portalViewUrl(latest.base36Url, latest.network)}
                     target="_blank" rel="noopener noreferrer"
                     className="text-sm text-success hover:text-success/80 transition-colors flex items-center gap-1"
                   >
-                    {latest.base36Url}.wal.app <ExternalLink className="w-3 h-3" />
+                    {portalViewLabel(latest.base36Url, latest.network)} <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
               </CardContent>
@@ -646,6 +733,12 @@ export default function ProjectDetail() {
                             <span className="font-mono">{d.base36Url}</span>
                           </div>
                         )}
+                        {d.status === 'deployed' && (() => {
+                          const st = getWalrusStorageStatus(d)
+                          return st.status !== 'active' && st.status !== 'unknown' ? (
+                            <WalrusStorageStatusBadge status={st.status} />
+                          ) : null
+                        })()}
                       </div>
                     </div>
                     <div className="text-textMuted group-hover:text-white transition-colors">

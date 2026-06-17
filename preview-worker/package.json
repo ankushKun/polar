@@ -1,28 +1,25 @@
 {
-  "name": "polar-worker",
+  "name": "polar-preview-worker",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "build:frontend": "VITE_API_BASE=/api npm run build --prefix ../frontend",
-    "deploy": "npm run build:frontend && wrangler deploy --keep-vars",
-    "db:migrate": "for f in migrations/*.sql; do npx wrangler d1 execute glacier-db --local --file=\"$f\"; done",
+    "dev": "wrangler dev --port 8788",
+    "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit"
+    "test:portal": "tsx scripts/test-portal.ts"
   },
   "dependencies": {
-    "@cloudflare/containers": "^0.1.0",
     "@mysten/bcs": "^2.1.0",
     "@mysten/sui": "^2.18.0",
     "base-x": "^5.0.1",
-    "bech32": "^2.0.0",
     "hono": "^4.7.0",
     "picomatch": "^4.0.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250502.0",
     "@types/picomatch": "^4.0.3",
+    "tsx": "^4.22.4",
     "typescript": "^5.7.0",
     "wrangler": "^4.14.0"
   }

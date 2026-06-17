@@ -23,6 +23,7 @@ import {
 } from '../db'
 import type { DeployRequest, BuildRequest, DeployCommand } from '../types'
 import type { Deployment, DeployResult } from '../types'
+import { getPortalPublicOrigin, withViewUrl } from '../view-url'
 import { detectFromGithubApi } from '../auto-detect'
 import { resolveMainnetEpochs, resolveTestnetEpochs } from '../epochs'
 import { coerceRelativeOutputDir } from '../output-dir'
@@ -451,7 +452,8 @@ router.get('/deployments/:id', async (c) => {
 
   deployment = await finalizeDeploymentFromContainer(c.env, db, deployment, c.executionCtx)
 
-  return c.json(deployment)
+  const origin = getPortalPublicOrigin(c.env, c.req.url)
+  return c.json(withViewUrl(deployment, origin))
 })
 
 router.post('/deployments/:id/retry', async (c) => {
@@ -598,13 +600,33 @@ router.post('/deployments/:id/redeploy', async (c) => {
     return c.json({ error: 'deleted deployments cannot be redeployed' }, 400)
   }
 
+  let body: { epochs?: number | 'max' } = {}
+  try {
+    const raw = await c.req.text()
+    if (raw.trim()) body = JSON.parse(raw) as { epochs?: number | 'max' }
+  } catch {
+    return c.json({ error: 'invalid JSON body' }, 400)
+  }
+
   const project = await getProjectByRepo(db, userAddress, deployment.repoUrl)
   const redeployId = crypto.randomUUID()
   const redeployBase = deployment.baseDir || '.'
   const safeOutputDir = coerceRelativeOutputDir(deployment.outputDir, redeployBase) ?? deployment.outputDir ?? 'dist'
-  const redeployEpochs =
-    deployment.epochs ??
-    (deployment.network === 'mainnet' ? 2 : resolveTestnetEpochs(undefined))
+
+  let redeployEpochs: number
+  if (body.epochs !== undefined) {
+    if (deployment.network === 'mainnet') {
+      const resolved = resolveMainnetEpochs(body.epochs)
+      if (!resolved.ok) return c.json({ error: resolved.error }, 400)
+      redeployEpochs = resolved.epochs
+    } else {
+      redeployEpochs = resolveTestnetEpochs(body.epochs)
+    }
+  } else {
+    redeployEpochs =
+      deployment.epochs ??
+      (deployment.network === 'mainnet' ? 2 : resolveTestnetEpochs(undefined))
+  }
   const commit =
     deployment.commitSha
       ? {
@@ -755,7 +777,8 @@ router.get('/deployments', async (c) => {
   const limit = Number(c.req.query('limit')) || 20
   const offset = Number(c.req.query('offset')) || 0
   const deployments = await getDeployments(db, payload.address as string, limit, offset)
-  return c.json({ deployments })
+  const origin = getPortalPublicOrigin(c.env, c.req.url)
+  return c.json({ deployments: deployments.map((d) => withViewUrl(d, origin)) })
 })
 
 // ── Projects ──
@@ -883,8 +906,12 @@ router.get('/projects/:id', async (c) => {
   }
 
   const deployments = await getDeploymentsByRepo(db, payload.address as string, project.repoUrl)
+  const origin = getPortalPublicOrigin(c.env, c.req.url)
 
-  return c.json({ project, deployments })
+  return c.json({
+    project,
+    deployments: deployments.map((d) => withViewUrl(d, origin)),
+  })
 })
 
 router.get('/projects/:id/secrets', async (c) => {

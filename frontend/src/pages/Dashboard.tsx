@@ -2,7 +2,10 @@ import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { listDeployments, type Deployment } from '../lib/api'
+import { portalViewLabel } from '../lib/portal'
 import { encodeRepoUrl, repoDisplay } from '../lib/repos'
+import { getWalrusStorageStatus, storageStatusPriority } from '../lib/epochs'
+import { WalrusStorageStatusBadge } from '../components/WalrusStorageStatusBadge'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { Plus, Box, GitBranch, Globe, Clock, Loader2, AlertCircle, ExternalLink, CheckCircle2, XCircle, Hash } from 'lucide-react'
@@ -29,11 +32,17 @@ function shortSha(sha: string | null | undefined): string {
   return sha ? sha.slice(0, 7) : 'unknown'
 }
 
+function findLiveDeployment(deployments: Deployment[]): Deployment | undefined {
+  return deployments.find((d) => d.status === 'deployed' && (d.base36Url || d.objectId))
+}
+
 interface Project {
   repoUrl: string
   name: string
   deployments: Deployment[]
   latest: Deployment | null
+  live: Deployment | null
+  storagePriority: number
 }
 
 export default function Dashboard() {
@@ -62,14 +71,21 @@ export default function Dashboard() {
     const result: Project[] = []
     for (const [repoUrl, deps] of groups) {
       deps.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+      const live = findLiveDeployment(deps) ?? null
+      const storageStatus = live ? getWalrusStorageStatus(live).status : 'unknown'
       result.push({
         repoUrl,
         name: repoDisplay(repoUrl),
         deployments: deps,
         latest: deps[0] || null,
+        live,
+        storagePriority: storageStatusPriority(storageStatus),
       })
     }
     result.sort((a, b) => {
+      if (a.storagePriority !== b.storagePriority) {
+        return a.storagePriority - b.storagePriority
+      }
       const da = a.latest ? +new Date(a.latest.createdAt) : 0
       const db = b.latest ? +new Date(b.latest.createdAt) : 0
       return db - da
@@ -129,6 +145,8 @@ export default function Dashboard() {
         <div className="grid gap-4">
           {projects.map((project) => {
             const latest = project.latest
+            const live = project.live
+            const liveStorage = live ? getWalrusStorageStatus(live) : null
             const s = latest ? STATUS[latest.status] || STATUS.queued : STATUS.queued
             const total = project.deployments.length
             const liveCount = project.deployments.filter((d) => d.status === 'deployed').length
@@ -149,6 +167,9 @@ export default function Dashboard() {
                       <Badge variant={s.color} className="gap-1.5 uppercase tracking-wider text-[10px]">
                         {s.icon} {s.label}
                       </Badge>
+                      {liveStorage && (
+                        <WalrusStorageStatusBadge status={liveStorage.status} />
+                      )}
                     </div>
 
                     <div className="flex items-center gap-4 text-xs font-medium text-textMuted">
@@ -179,10 +200,25 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    {latest?.base36Url && (
-                      <div className="flex items-center gap-1.5 text-info text-xs">
-                        <ExternalLink className="w-3 h-3" />
-                        <span className="font-mono">{latest.base36Url}.wal.app</span>
+                    {(live?.base36Url || latest?.base36Url) && (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 text-info text-xs">
+                          <ExternalLink className="w-3 h-3" />
+                          <span className="font-mono">
+                            {portalViewLabel(
+                              (live?.base36Url || latest?.base36Url)!,
+                              (live ?? latest)!.network,
+                            )}
+                          </span>
+                        </div>
+                        {liveStorage?.status === 'expired' && (
+                          <span className="text-xs text-danger">Walrus storage likely expired — renew to restore</span>
+                        )}
+                        {liveStorage?.status === 'expiring_soon' && liveStorage.daysRemaining != null && (
+                          <span className="text-xs text-warning">
+                            Storage expires in ~{Math.ceil(liveStorage.daysRemaining)} day{Math.ceil(liveStorage.daysRemaining) === 1 ? '' : 's'}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

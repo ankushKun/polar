@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "polar",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-05-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  }
+}
