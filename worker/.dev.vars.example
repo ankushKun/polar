@@ -12,7 +12,8 @@ API_PUBLIC_URL=http://127.0.0.1:8787
 # Or set explicitly: GITHUB_REDIRECT_URI=http://127.0.0.1:8787/api/github/callback
 
 # Optional — deployment preview worker (personal CF account)
-# PORTAL_PUBLIC_ORIGIN=https://polar.ankushkun.workers.dev
+# PORTAL_PUBLIC_ORIGIN=https://polar.ankush.one
+# PORTAL_SUBDOMAIN_BASE=polar.ankush.one
 # SUI_KEYSTORE=
 # SUI_ADDRESS=
 # WEBHOOK_SECRET=

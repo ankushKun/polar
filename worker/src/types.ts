@@ -62,7 +62,7 @@ export interface Deployment {
   error: string | null
   objectId: string | null
   base36Url: string | null
-  /** Computed portal view URL (/m/ or /t/ path); present in API responses only */
+  /** Computed preview URL (https://{base36}.polar.ankush.one/ when subdomain portal is configured) */
   viewUrl?: string | null
   logs: string
   createdAt: string

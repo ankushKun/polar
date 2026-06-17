@@ -1,16 +1,21 @@
 import { base36ToHex } from './object-id'
+import { resolveWalrusSiteNetwork } from './network-resolve'
 import { getPortalFetcher } from './portal-fetcher'
 import { invalidSiteId } from './errors'
 import type { WalrusNetwork } from './types'
 import {
   parsePortalRequestPath,
+  parseSubdomainSiteHost,
   rewriteLocationHeader,
   rewritePortalCss,
   rewritePortalHtml,
 } from './urls'
 
+type PortalRequestContext = { req: { url: string } }
+
+/** Path-prefix portal: /m/{id}/ or /t/{id}/ */
 export async function handlePortalRequest(
-  c: { req: { url: string } },
+  c: PortalRequestContext,
   network: WalrusNetwork,
   networkPrefix: 'm' | 't',
 ): Promise<Response> {
@@ -21,10 +26,40 @@ export async function handlePortalRequest(
   if (!objectId) return invalidSiteId()
 
   const portalPrefix = `/${networkPrefix}/${parsed.base36}`
+  return serveSiteResource(objectId, network, parsed.sitePath, portalPrefix)
+}
 
+/** Subdomain portal: {base36}.polar.example.com — network auto-detected from chain. */
+export async function handleSubdomainPortalRequest(
+  c: PortalRequestContext,
+  base36: string,
+): Promise<Response> {
+  const objectId = base36ToHex(base36)
+  if (!objectId) return invalidSiteId()
+
+  const network = await resolveWalrusSiteNetwork(objectId)
+  if (!network) return invalidSiteId()
+
+  const sitePath = new URL(c.req.url).pathname || '/'
+  return serveSiteResource(objectId, network, sitePath, '')
+}
+
+export function tryParseSubdomainSiteRequest(
+  host: string,
+  portalSubdomainBase: string,
+): { base36: string } | null {
+  return parseSubdomainSiteHost(host, portalSubdomainBase)
+}
+
+async function serveSiteResource(
+  objectId: string,
+  network: WalrusNetwork,
+  sitePath: string,
+  portalPrefix: string,
+): Promise<Response> {
   try {
     const fetcher = getPortalFetcher(network)
-    const response = await fetcher.fetchSiteResource(objectId, parsed.sitePath)
+    const response = await fetcher.fetchSiteResource(objectId, sitePath)
 
     let finalResponse = response
 
@@ -36,7 +71,7 @@ export async function handlePortalRequest(
     }
 
     const contentType = finalResponse.headers.get('Content-Type') ?? ''
-    if (contentType.includes('text/html')) {
+    if (portalPrefix && contentType.includes('text/html')) {
       const html = await finalResponse.text()
       const rewritten = rewritePortalHtml(html, portalPrefix)
       const headers = new Headers(finalResponse.headers)
@@ -44,7 +79,7 @@ export async function handlePortalRequest(
       return new Response(rewritten, { status: finalResponse.status, headers })
     }
 
-    if (contentType.includes('text/css')) {
+    if (portalPrefix && contentType.includes('text/css')) {
       const css = await finalResponse.text()
       const rewritten = rewritePortalCss(css, portalPrefix)
       const headers = new Headers(finalResponse.headers)

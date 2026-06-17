@@ -1,108 +1,74 @@
 # Polar preview worker
 
-Walrus Sites portal only — serves deployed Polar sites at:
+Walrus Sites portal — serves deployed Polar sites at:
 
-- **Mainnet:** `https://polar.ankushkun.workers.dev/m/{base36SiteId}/`
-- **Testnet:** `https://polar.ankushkun.workers.dev/t/{base36SiteId}/`
+- **Primary:** `https://{base36SiteId}.polar.ankush.one/` (mainnet **or** testnet — auto-detected from chain)
+- **Legacy:** `/m/{id}/` and `/t/{id}/` on workers.dev
 
-Deploy this to your **personal** Cloudflare account. The main Polar worker (org account) sets `PORTAL_PUBLIC_ORIGIN` to this URL so dashboard links point here.
+Deploy via **GitHub → Cloudflare CI/CD** (personal account). Do not deploy from CLI — see [`../AGENTS.md`](../AGENTS.md).
 
-This worker is **not** deployed via the Cloudflare GitHub dashboard. The repo is a monorepo and the dashboard setup flow has no subdirectory picker, so a Git-connected project would try to deploy the repo root and touch the wrong worker.
+The org worker sets `PORTAL_SUBDOMAIN_BASE=polar.ankush.one` so API `viewUrl` uses subdomain links.
 
-## Deploy (CLI only — preview worker only)
+## Custom domain (ankush.one)
 
-Log in to your **personal** Cloudflare account (not the org account that runs the main API worker).
+Use a **scoped** wildcard — not `*.ankush.one/*` (that catches every subdomain on your domain).
 
-From the repo root:
+| Step | Value |
+| --- | --- |
+| DNS | Proxied `AAAA` record: name `*.polar` → `100::` (creates `*.polar.ankush.one`) |
+| Worker route | **Route pattern:** `*.polar.ankush.one/*` (Workers & Pages → your worker → Domains & Routes) |
+| Optional apex | Custom domain `polar.ankush.one` for health/info JSON |
 
-```bash
-npm install --prefix preview-worker
-npx wrangler login
-npx wrangler deploy --config preview-worker/wrangler.jsonc
+Wrangler var (already in `wrangler.jsonc`):
+
+```jsonc
+"vars": { "PORTAL_SUBDOMAIN_BASE": "polar.ankush.one" }
 ```
 
-Or use the root script (after `npm run install:all` once):
+### How network detection works
 
-```bash
-npm run deploy:preview
-```
+For `{base36}.polar.ankush.one`, the worker:
 
-From `preview-worker/`:
+1. Decodes base36 → Sui object ID
+2. Checks mainnet and testnet RPC in parallel for that object
+3. Serves from whichever chain has the site (same URL for both networks)
 
-```bash
-cd preview-worker
-npm install
-npx wrangler login
-npm run deploy
-```
+No `/m/` vs `/t/` in the URL — object IDs only exist on one chain.
 
-These commands deploy **only** the worker named `polar` in `preview-worker/wrangler.jsonc`. They do **not** deploy the main API worker, frontend, or Walrus site.
+### CI/CD build settings
 
-### What stays untouched
+**Build command:** `npm ci --prefix preview-worker`
 
-| Piece | Deploy separately | Command |
-| --- | --- | --- |
-| Main API worker (org account) | Yes | `cd worker && npm run deploy` |
-| Frontend on Walrus (`polar.wal.app`) | Yes | Walrus site-builder / your existing flow |
-| This preview worker | This README | commands above |
-
-### If you still want GitHub → Cloudflare
-
-Cloudflare clones with submodules enabled. The `worker/walrus-deploy` submodule must use an HTTPS URL (see `.gitmodules`) so CI can fetch it without SSH keys.
-
-Set **Build command** to:
-
-```bash
-npm ci --prefix preview-worker
-```
-
-Set **Deploy command** to:
-
-```bash
-npx wrangler deploy --config preview-worker/wrangler.jsonc
-```
-
-Do **not** use `npm run install:all` here — that installs worker and frontend too, and is unnecessary for the preview worker.
-
-Leave **Root directory** as `/` (repo root). The deploy command above targets only `preview-worker/wrangler.jsonc`.
+**Deploy command:** `npx wrangler deploy --config preview-worker/wrangler.jsonc`
 
 ## Local dev
 
 ```bash
-npm run dev   # http://localhost:8788
+npm run dev   # http://localhost:8788 — use /m/ and /t/ paths locally
 ```
 
 From repo root: `npm run dev:preview`
 
-## Test site IDs
+## Test URLs
 
-Use these after deploy to confirm routing and Walrus fetches. Replace the host if your worker URL differs.
+| Site | URL |
+| --- | --- |
+| Polar (mainnet deploy) | `https://1f1itb0yx8w7mjw50qp0oyikwcu9ysgn9xwvm5v21nk3kiu3wj.polar.ankush.one/` |
+| Walrus mainnet landing | `https://46f3881sp4r55fc6pcao9t93bieeejl4vr4k2uv8u4wwyx1a93.polar.ankush.one/` |
+| Walrus testnet landing | `https://1p3repujoigwcqrk0w4itsxm7hs7xjl4hwgt3t0szn6evad83q.polar.ankush.one/` |
+| Health (apex) | `https://polar.ankush.one/health` |
 
-| Network | Base36 site ID | What it is | Expected after deploy |
-| --- | --- | --- | --- |
-| **Mainnet** | `46f3881sp4r55fc6pcao9t93bieeejl4vr4k2uv8u4wwyx1a93` | Walrus Sites mainnet portal landing page ([docs default](https://docs.wal.app/docs/sites/portals/mainnet-testnet)) | **200** — HTML landing page |
-| **Testnet** | `1p3repujoigwcqrk0w4itsxm7hs7xjl4hwgt3t0szn6evad83q` | Walrus Sites testnet portal landing page ([docs default](https://docs.wal.app/docs/sites/portals/mainnet-testnet)) | **404** “Content unavailable” if storage expired; still proves `/t/{id}/` routing and on-chain site lookup |
-
-For a **live testnet 200**, deploy any site to testnet via Polar and open `/t/{yourBase36Id}/` from the deployment detail page.
-
-### Browser
-
-- Mainnet: https://polar.ankushkun.workers.dev/m/aHR0cHM6Ly9naXRodWIuY29tL2Fua3VzaEt1bi9wb2xhci5naXQ/
-- Testnet: https://polar.ankushkun.workers.dev/t/1p3repujoigwcqrk0w4itsxm7hs7xjl4hwgt3t0szn6evad83q/
-- Health: https://polar.ankushkun.workers.dev/health
-
-### curl
+Legacy path-prefix (workers.dev):
 
 ```bash
-curl -sI "https://polar.ankushkun.workers.dev/health"
-curl -sI "https://polar.ankushkun.workers.dev/m/aHR0cHM6Ly9naXRodWIuY29tL2Fua3VzaEt1bi9wb2xhci5naXQ/"
-curl -sI "https://polar.ankushkun.workers.dev/t/1p3repujoigwcqrk0w4itsxm7hs7xjl4hwgt3t0szn6evad83q/"
+curl -sI "https://polar.ankushkun.workers.dev/m/46f3881sp4r55fc6pcao9t93bieeejl4vr4k2uv8u4wwyx1a93/"
 ```
 
-### Local portal logic (no deploy)
+### Local tests
 
 ```bash
 npm run test:portal
+npm run test:url-rewrite
 ```
 
 Portal implementation lives in [`../worker/src/portal/`](../worker/src/portal/) and is shared via source import (no duplicate code).

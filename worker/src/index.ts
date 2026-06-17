@@ -34,6 +34,8 @@ export interface Env {
   WALRUS_EPOCHS?: string
   /** Public origin for deployment preview links (separate preview worker) */
   PORTAL_PUBLIC_ORIGIN?: string
+  /** e.g. polar.ankush.one — preview URLs become https://{base36}.{host}/ */
+  PORTAL_SUBDOMAIN_BASE?: string
 }
 
 const app = new Hono<{ Bindings: Env }>()

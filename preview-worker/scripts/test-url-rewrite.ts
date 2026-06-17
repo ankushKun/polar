@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict'
-import { rewritePortalCss, rewritePortalHtml } from '../../worker/src/portal/urls'
+import { parseSubdomainSiteHost, rewritePortalCss, rewritePortalHtml } from '../../worker/src/portal/urls'
 
 const prefix = '/m/1f1itb0yx8w7mjw50qp0oyikwcu9ysgn9xwvm5v21nk3kiu3wj'
+const portalBase = 'polar.ankush.one'
+
+assert.deepEqual(parseSubdomainSiteHost('abc.polar.ankush.one', portalBase), { base36: 'abc' })
+assert.equal(parseSubdomainSiteHost('polar.ankush.one', portalBase), null)
+assert.equal(parseSubdomainSiteHost('foo.bar.polar.ankush.one', portalBase), null)
+assert.equal(parseSubdomainSiteHost('www.polar.ankush.one', portalBase), null)
 
 const html = `<!DOCTYPE html>
 <html><head>

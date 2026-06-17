@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "build:frontend": "VITE_API_BASE=/api npm run build --prefix ../frontend",
+    "build:frontend": "VITE_API_BASE=/api VITE_PORTAL_SUBDOMAIN_BASE=polar.ankush.one npm run build --prefix ../frontend",
     "deploy": "npm run build:frontend && wrangler deploy --keep-vars",
     "db:migrate": "for f in migrations/*.sql; do npx wrangler d1 execute glacier-db --local --file=\"$f\"; done",
     "typecheck": "tsc --noEmit",

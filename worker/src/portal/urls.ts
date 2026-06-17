@@ -8,10 +8,33 @@ export function deploymentViewUrl(
   base36: string,
   network: WalrusNetwork,
   origin: string,
+  subdomainBase?: string | null,
 ): string {
+  const host = subdomainBase?.trim().replace(/^\.+/, '').replace(/\/+$/, '')
+  if (host) {
+    return `https://${base36}.${host}/`
+  }
   const prefix = portalPathPrefix(network)
   const base = origin.replace(/\/+$/, '')
   return `${base}/${prefix}/${base36}/`
+}
+
+/** Host for {base36}.{portalSubdomainBase}, e.g. polar.ankush.one */
+export function parseSubdomainSiteHost(
+  host: string,
+  portalSubdomainBase: string,
+): { base36: string } | null {
+  const hostname = host.toLowerCase().split(':')[0]
+  const base = portalSubdomainBase.toLowerCase().replace(/^\.+/, '').replace(/\/+$/, '')
+  if (!base || !hostname.endsWith(`.${base}`)) return null
+
+  const label = hostname.slice(0, -(base.length + 1))
+  if (!label || label.includes('.')) return null
+
+  const reserved = new Set(['www', 'health', 'api'])
+  if (reserved.has(label)) return null
+
+  return { base36: label }
 }
 
 export function parsePortalRequestPath(
@@ -71,6 +94,10 @@ export function rewriteLocationHeader(
   portalPrefix: string,
 ): string {
   if (location.startsWith('http://') || location.startsWith('https://')) return location
+  if (!portalPrefix) {
+    if (location.startsWith('/')) return location
+    return location
+  }
   if (location.startsWith('/')) return `${portalPrefix}${location}`
   return location
 }

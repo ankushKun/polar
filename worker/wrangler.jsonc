@@ -58,7 +58,8 @@
     "WALRUS_EPOCHS": "1",
     "FRONTEND_URL": "https://glacier.construct-computer.workers.dev",
     "API_PUBLIC_URL": "https://glacier.construct-computer.workers.dev",
-    "PORTAL_PUBLIC_ORIGIN": "https://polar.ankushkun.workers.dev",
+    "PORTAL_PUBLIC_ORIGIN": "https://polar.ankush.one",
+    "PORTAL_SUBDOMAIN_BASE": "polar.ankush.one",
     "CORS_ORIGINS": "https://polar.wal.app"
   }
 }

@@ -50,7 +50,10 @@ ensure(join(root, 'frontend/.env.development'), () => {
 })
 
 ensure(join(root, 'frontend/.env.production'), () => {
-  writeFileSync(join(root, 'frontend/.env.production'), 'VITE_API_BASE=/api\n')
+  writeFileSync(
+    join(root, 'frontend/.env.production'),
+    'VITE_API_BASE=/api\nVITE_PORTAL_SUBDOMAIN_BASE=polar.ankush.one\n',
+  )
 })
 
 const devVars = join(root, 'worker/.dev.vars')

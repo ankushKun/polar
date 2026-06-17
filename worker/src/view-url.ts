@@ -1,20 +1,8 @@
 import type { Env } from './index'
+import { deploymentViewUrl } from './portal/urls'
+import type { WalrusNetwork } from './portal/types'
 
-export type WalrusNetwork = 'mainnet' | 'testnet'
-
-export function portalPathPrefix(network: WalrusNetwork): 'm' | 't' {
-  return network === 'mainnet' ? 'm' : 't'
-}
-
-export function deploymentViewUrl(
-  base36: string,
-  network: WalrusNetwork,
-  origin: string,
-): string {
-  const prefix = portalPathPrefix(network)
-  const base = origin.replace(/\/+$/, '')
-  return `${base}/${prefix}/${base36}/`
-}
+export type { WalrusNetwork } from './portal/types'
 
 export function trimPortalOrigin(url: string | undefined): string | undefined {
   const trimmed = url?.trim().replace(/\/+$/, '')
@@ -30,13 +18,18 @@ export function getPortalPublicOrigin(env: Env, requestUrl?: string): string {
   )
 }
 
+export function getPortalSubdomainBase(env: Env): string | undefined {
+  return trimPortalOrigin(env.PORTAL_SUBDOMAIN_BASE)
+}
+
 export function computeViewUrl(
   base36Url: string | null | undefined,
   network: WalrusNetwork,
   origin: string,
+  subdomainBase?: string | null,
 ): string | null {
   if (!base36Url) return null
-  return deploymentViewUrl(base36Url, network, origin)
+  return deploymentViewUrl(base36Url, network, origin, subdomainBase)
 }
 
 export type DeploymentWithViewUrl<T extends { base36Url?: string | null; network: WalrusNetwork }> =
@@ -45,9 +38,10 @@ export type DeploymentWithViewUrl<T extends { base36Url?: string | null; network
 export function withViewUrl<T extends { base36Url?: string | null; network: WalrusNetwork }>(
   deployment: T,
   origin: string,
+  subdomainBase?: string | null,
 ): DeploymentWithViewUrl<T> {
   return {
     ...deployment,
-    viewUrl: computeViewUrl(deployment.base36Url, deployment.network, origin),
+    viewUrl: computeViewUrl(deployment.base36Url, deployment.network, origin, subdomainBase),
   }
 }

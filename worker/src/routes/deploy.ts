@@ -23,7 +23,7 @@ import {
 } from '../db'
 import type { DeployRequest, BuildRequest, DeployCommand } from '../types'
 import type { Deployment, DeployResult } from '../types'
-import { getPortalPublicOrigin, withViewUrl } from '../view-url'
+import { getPortalPublicOrigin, getPortalSubdomainBase, withViewUrl } from '../view-url'
 import { detectFromGithubApi } from '../auto-detect'
 import { resolveMainnetEpochs, resolveTestnetEpochs } from '../epochs'
 import { coerceRelativeOutputDir } from '../output-dir'
@@ -453,7 +453,8 @@ router.get('/deployments/:id', async (c) => {
   deployment = await finalizeDeploymentFromContainer(c.env, db, deployment, c.executionCtx)
 
   const origin = getPortalPublicOrigin(c.env, c.req.url)
-  return c.json(withViewUrl(deployment, origin))
+  const subdomainBase = getPortalSubdomainBase(c.env)
+  return c.json(withViewUrl(deployment, origin, subdomainBase))
 })
 
 router.post('/deployments/:id/retry', async (c) => {
@@ -778,7 +779,8 @@ router.get('/deployments', async (c) => {
   const offset = Number(c.req.query('offset')) || 0
   const deployments = await getDeployments(db, payload.address as string, limit, offset)
   const origin = getPortalPublicOrigin(c.env, c.req.url)
-  return c.json({ deployments: deployments.map((d) => withViewUrl(d, origin)) })
+  const subdomainBase = getPortalSubdomainBase(c.env)
+  return c.json({ deployments: deployments.map((d) => withViewUrl(d, origin, subdomainBase)) })
 })
 
 // ── Projects ──
@@ -907,10 +909,11 @@ router.get('/projects/:id', async (c) => {
 
   const deployments = await getDeploymentsByRepo(db, payload.address as string, project.repoUrl)
   const origin = getPortalPublicOrigin(c.env, c.req.url)
+  const subdomainBase = getPortalSubdomainBase(c.env)
 
   return c.json({
     project,
-    deployments: deployments.map((d) => withViewUrl(d, origin)),
+    deployments: deployments.map((d) => withViewUrl(d, origin, subdomainBase)),
   })
 })
 
