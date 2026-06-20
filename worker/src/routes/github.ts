@@ -16,8 +16,9 @@ import {
 const router = new Hono<AuthenticatedEnv>()
 
 router.use('*', async (c, next) => {
-  const path = c.req.path
-  if (path === '/login' || path === '/callback' || path.startsWith('/login')) {
+  // Mounted at /api/github — c.req.path is the full path (e.g. /api/github/login), not /login.
+  const path = c.req.path.replace(/^\/api\/github/, '') || '/'
+  if (path === '/login' || path === '/callback') {
     await next()
     return
   }

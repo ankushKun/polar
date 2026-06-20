@@ -81,12 +81,13 @@ app.get('/api/me', async (c) => {
   })
 })
 
-app.route('/api', agentToken)
-
-app.route('/api', deploy)
-app.route('/api/webhook', webhook)
+// Mount specific /api/* routers before broad /api deploy routes (deploy's auth middleware
+// would otherwise intercept /api/github/login and /api/github/callback).
 app.route('/api/github', github)
+app.route('/api/webhook', webhook)
 app.route('/api/dev', dev)
+app.route('/api', agentToken)
+app.route('/api', deploy)
 app.route('/api', wallet)
 app.route('/api', estimate)
 
