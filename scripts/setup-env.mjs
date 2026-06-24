@@ -36,6 +36,7 @@ GITHUB_CLIENT_SECRET=
 
 FRONTEND_URL=http://127.0.0.1:3000
 API_PUBLIC_URL=http://127.0.0.1:8787
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://localhost:8787,https://polar.wal.app
 
 DEV_AUTH_BYPASS=true
 

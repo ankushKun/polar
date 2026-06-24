@@ -9,6 +9,8 @@ SECRETS_ENCRYPTION_KEY=
 # Required for local OAuth + CORS (override production values in wrangler.jsonc)
 FRONTEND_URL=http://127.0.0.1:3000
 API_PUBLIC_URL=http://127.0.0.1:8787
+# Extra browser origins (localhost vs 127.0.0.1 are distinct to CORS)
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://localhost:8787,https://polar.wal.app
 # Or set explicitly: GITHUB_REDIRECT_URI=http://127.0.0.1:8787/api/github/callback
 
 # Local UI preview without GitHub OAuth (never set in production wrangler.jsonc)

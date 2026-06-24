@@ -16,10 +16,26 @@ export function LandingDemoChapters({
   onChapterSelect,
 }: LandingDemoChaptersProps) {
   const chapters = LANDING_DEMO.chapters
+  const listRef = useRef<HTMLDivElement>(null)
   const activeRef = useRef<HTMLButtonElement>(null)
+  const skipInitialScrollRef = useRef(true)
 
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    if (skipInitialScrollRef.current) {
+      skipInitialScrollRef.current = false
+      return
+    }
+    const list = listRef.current
+    const active = activeRef.current
+    if (!list || !active) return
+
+    const listRect = list.getBoundingClientRect()
+    const activeRect = active.getBoundingClientRect()
+    if (activeRect.top < listRect.top) {
+      list.scrollTop -= listRect.top - activeRect.top
+    } else if (activeRect.bottom > listRect.bottom) {
+      list.scrollTop += activeRect.bottom - listRect.bottom
+    }
   }, [activeIndex])
 
   return (
@@ -39,6 +55,7 @@ export function LandingDemoChapters({
           </p>
         </div>
         <div
+          ref={listRef}
           className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
           role="list"
           aria-label="Demo video chapters"

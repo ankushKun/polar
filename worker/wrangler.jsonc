@@ -61,6 +61,6 @@
     "GITHUB_REDIRECT_URI": "https://glacier.construct-computer.workers.dev/api/github/callback",
     "PORTAL_PUBLIC_ORIGIN": "https://polar.ankush.one",
     "PORTAL_SUBDOMAIN_BASE": "polar.ankush.one",
-    "CORS_ORIGINS": "https://polar.wal.app"
+    "CORS_ORIGINS": "https://polar.wal.app,http://localhost:3000,http://127.0.0.1:3000,http://localhost:8787,http://127.0.0.1:8787"
   }
 }
