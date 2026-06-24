@@ -9,6 +9,7 @@ import {
 } from 'react'
 import { devLogin as apiDevLogin, getToken, setToken, clearToken, getGithubLoginUrl, fetchMe } from '../lib/api'
 import { isDevAuthBypassEnabled } from '../lib/devFlags'
+import posthog from 'posthog-js'
 
 type AuthContextValue = {
   isAuthenticated: boolean
@@ -42,6 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const me = await fetchMe()
       setGithubLogin(me.github_login)
+      if (me.github_login) {
+        posthog.identify(me.github_login)
+        posthog.capture('user_logged_in', { github_login: me.github_login })
+      }
     } catch {
       clearToken()
       setTok(null)
@@ -103,6 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    posthog.capture('user_logged_out')
+    posthog.reset()
     clearToken()
     setTok(null)
     setGithubLogin(null)

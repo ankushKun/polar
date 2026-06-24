@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { usePostHog } from '@posthog/react'
 import {
   createAgentToken,
   getAgentTokenStatus,
@@ -21,6 +22,7 @@ function maskApiKey(token: string): string {
 
 export default function Agents() {
   const { isAuthenticated, login, devLogin, isConnecting, devAuthAvailable } = useAuth()
+  const posthog = usePostHog()
   const [status, setStatus] = useState<AgentTokenStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -63,6 +65,7 @@ export default function Agents() {
       )
       if (!ok) return
     }
+    posthog?.capture('api_key_generated', { regenerated: regenerate })
     setBusy(true)
     setError(null)
     try {
@@ -82,6 +85,7 @@ export default function Agents() {
 
   async function handleRevoke() {
     if (!confirm('Revoke your API key? Agents using it will lose access immediately.')) return
+    posthog?.capture('api_key_revoked')
     setBusy(true)
     setError(null)
     try {

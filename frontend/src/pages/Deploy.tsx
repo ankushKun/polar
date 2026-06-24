@@ -29,6 +29,7 @@ import { EmptyState } from '../components/EmptyState'
 import { GithubIcon } from '../components/icons/GithubIcon'
 import { Search, Lock, Globe, Box, Settings2, ShieldCheck, ChevronDown, Rocket, FileCode2, Package, TerminalSquare, Terminal, Upload, KeyRound } from 'lucide-react'
 import { cn } from '../lib/utils'
+import { usePostHog } from '@posthog/react'
 
 const FRAMEWORK_BADGES: Record<string, { bg: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline' }> = {
   'Next.js':    { bg: 'outline' },
@@ -103,6 +104,7 @@ function commitTitle(message: string | null | undefined): string {
 export default function Deploy() {
   const { isAuthenticated, login } = useAuth()
   const navigate = useNavigate()
+  const posthog = usePostHog()
 
   // GitHub connection
   const [ghConnected, setGhConnected] = useState(false)
@@ -263,6 +265,11 @@ export default function Deploy() {
 
   // Select repo → deep detect
   async function selectRepo(repo: GithubRepo) {
+    posthog?.capture('repo_selected', {
+      repo: repo.full_name,
+      private: repo.private,
+      default_branch: repo.default_branch,
+    })
     setSelectedRepo(repo)
     setEstimate(null)
     setEstimateLogsOpen(false)
@@ -318,6 +325,13 @@ export default function Deploy() {
       setError(parsedEnv.error)
       return
     }
+    posthog?.capture('deployment_started', {
+      repo: selectedRepo.full_name,
+      network,
+      branch,
+      epochs: network === 'mainnet' ? mainnetTierIndexToEpochs(mainnetTierIndex) : (epochs || 1),
+      has_env_secrets: envNames.length > 0,
+    })
     setSubmitting(true)
     setError(null)
     try {
@@ -352,6 +366,11 @@ export default function Deploy() {
       setError(parsedEnv.error)
       return
     }
+    posthog?.capture('cost_estimated', {
+      repo: selectedRepo.full_name,
+      network,
+      branch,
+    })
     setEstimating(true)
     setEstimate(null)
     setError(null)
@@ -387,6 +406,7 @@ export default function Deploy() {
 
   async function connectGithub() {
     try {
+      posthog?.capture('github_connected')
       const url = await getGithubLoginUrl()
       window.location.href = url
     } catch (err) { console.error(err) }

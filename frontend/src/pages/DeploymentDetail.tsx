@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { usePostHog } from '@posthog/react'
 import { getDeployment, deleteDeployment, retryDeployment, redeployDeployment, getToken, type Deployment, type Project, listProjects } from '../lib/api'
 import { encodeRepoUrl, repoName } from '../lib/repos'
 import { portalViewUrl } from '../lib/portal'
@@ -45,6 +46,7 @@ export default function DeploymentDetail() {
   const { id } = useParams<{ id: string }>()
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
+  const posthog = usePostHog()
   const [d, setD] = useState<Deployment | null>(null)
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
@@ -54,7 +56,7 @@ export default function DeploymentDetail() {
   const [redeploying, setRedeploying] = useState(false)
   const [liveLogs, setLiveLogs] = useState('')
   const [sseDone, setSseDone] = useState(false)
-  const logsEndRef = useRef<HTMLDivElement>(null)
+  const logsContainerRef = useRef<HTMLDivElement>(null)
 
   const isLive = !!(d && ['building', 'deploying'].includes(d.status))
   const hasError = !!(d && d.status === 'failed')
@@ -98,11 +100,11 @@ export default function DeploymentDetail() {
     },
   })
 
-  // Auto-scroll logs
+  // Auto-scroll logs within the log panel only
   useEffect(() => {
-    if (liveLogs && logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' })
-    }
+    const el = logsContainerRef.current
+    if (!liveLogs || !el) return
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }, [liveLogs])
 
   // Status polling during all active phases
@@ -135,6 +137,7 @@ export default function DeploymentDetail() {
 
   async function handleDelete() {
     if (!id || !confirm('Delete this deployment? This cannot be undone.')) return
+    posthog?.capture('deployment_deleted', { deployment_id: id, repo: d ? repoName(d.repoUrl) : undefined })
     setDeleting(true)
     try { await deleteDeployment(id); navigate('/dashboard') }
     catch (err) { alert(err instanceof Error ? err.message : 'Delete failed'); setDeleting(false) }
@@ -142,6 +145,7 @@ export default function DeploymentDetail() {
 
   async function handleRetry() {
     if (!id) return
+    posthog?.capture('deployment_retried', { deployment_id: id, repo: d ? repoName(d.repoUrl) : undefined })
     setRetrying(true)
     try {
       const { id: newId } = await retryDeployment(id)
@@ -154,6 +158,12 @@ export default function DeploymentDetail() {
 
   async function handleRedeploy(epochs?: number | 'max') {
     if (!id) return
+    posthog?.capture('deployment_redeployed', {
+      deployment_id: id,
+      repo: d ? repoName(d.repoUrl) : undefined,
+      network: d?.network,
+      epochs,
+    })
     setRedeploying(true)
     try {
       const { id: newId } = await redeployDeployment(
@@ -354,9 +364,11 @@ export default function DeploymentDetail() {
                   Publishing to Walrus can take several minutes. <span className="text-white/90">Updated at</span> should advance periodically while the deploy runs.
                 </div>
               )}
-              <div className="flex-1 p-4 overflow-x-auto overflow-y-auto max-h-[600px] font-mono text-sm leading-relaxed scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+              <div
+                ref={logsContainerRef}
+                className="flex-1 p-4 overflow-x-auto overflow-y-auto max-h-[600px] font-mono text-sm leading-relaxed scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+              >
                 <LogPre liveLogs={liveLogs} storedLogs={d.logs} />
-                <div ref={logsEndRef} className="h-4" />
               </div>
             </div>
           </Card>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { usePostHog } from '@posthog/react'
 import {
   getProject,
   deleteProject,
@@ -107,6 +108,7 @@ export default function ProjectDetail() {
   const { encodedRepo } = useParams<{ encodedRepo: string }>()
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
+  const posthog = usePostHog()
   const [project, setProject] = useState<Project | null>(null)
   const [deployments, setDeployments] = useState<Deployment[]>([])
   const [secrets, setSecrets] = useState<ProjectSecret[]>([])
@@ -235,6 +237,7 @@ export default function ProjectDetail() {
 
   async function handleDelete() {
     if (!project || !hasProjectId || !confirm('Delete this project and all its deployments? This cannot be undone.')) return
+    posthog?.capture('project_deleted', { repo: repoName, network: project.network })
     setDeleting(true)
     try {
       await deleteProject(project.id)
@@ -247,6 +250,7 @@ export default function ProjectDetail() {
 
   async function handleDeployLatest() {
     if (!project || !hasProjectId) return
+    posthog?.capture('project_updated', { repo: repoName, network: project.network, branch: project.branch })
     setDeployingLatest(true)
     try {
       const { id } = await deployLatestProject(project.id)
@@ -284,6 +288,7 @@ export default function ProjectDetail() {
       return
     }
 
+    posthog?.capture('secret_saved', { repo: repoName, secret_name: name })
     setSavingSecret(true)
     setSecretError(null)
     try {
@@ -300,6 +305,7 @@ export default function ProjectDetail() {
 
   async function handleImportSecrets() {
     if (!project || !hasProjectId || !importText.trim() || importPreview.error) return
+    posthog?.capture('secrets_imported', { repo: repoName, secret_count: importPreview.names.length })
     setImportingSecrets(true)
     setSecretError(null)
     try {
@@ -316,6 +322,7 @@ export default function ProjectDetail() {
 
   async function handleDeleteSecret(name: string) {
     if (!project || !hasProjectId || !confirm(`Delete ${name}? Builds will no longer receive this variable.`)) return
+    posthog?.capture('secret_deleted', { repo: repoName, secret_name: name })
     setSecretError(null)
     try {
       setSecrets(await deleteProjectSecret(project.id, name))

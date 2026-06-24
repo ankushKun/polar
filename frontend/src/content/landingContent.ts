@@ -31,6 +31,17 @@ export const LANDING_DEMO = {
   } satisfies SplitHeadline,
   description: 'Watch a full deploy from GitHub sign-in to a live Walrus preview URL.',
   urlBar: 'polar.wal.app',
+  chapters: [
+    { seconds: 0, label: 'Develop a sample Vite app which will be used for deployment' },
+    { seconds: 10, label: 'Use Polar to deploy the sample app' },
+    { seconds: 22, label: 'Calculate approx deployment costs in WAL and SUI' },
+    { seconds: 30, label: 'Run the actual deployment on Walrus' },
+    { seconds: 45, label: 'Deployment success' },
+    { seconds: 68, label: 'Polar MCP for AI Agents' },
+    { seconds: 75, label: 'Add Polar MCP to Cursor' },
+    { seconds: 115, label: 'Make Cursor update and redeploy the sample app using Polar MCP' },
+    { seconds: 145, label: 'Checkout the updated deployment' },
+  ],
 } as const
 
 export const LANDING_WORKFLOW = {

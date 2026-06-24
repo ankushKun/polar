@@ -1,14 +1,51 @@
+import { useCallback, useRef, useState } from 'react'
 import { Globe, Lock } from 'lucide-react'
 import { LANDING_DEMO } from '../../content/landingContent'
-import { LANDING_LINKS, youtubeEmbedUrl } from '../../lib/landingLinks'
+import { useLandingDemoPlayback } from '../../hooks/useLandingDemoPlayback'
+import { useVideoColumnHeight } from '../../hooks/useVideoColumnHeight'
+import { LANDING_LINKS, youtubeVideoId } from '../../lib/landingLinks'
 import { BrowserTrafficLights } from './BrowserTrafficLights'
+import { LandingDemoChapterFlash } from './LandingDemoChapterFlash'
+import { LandingDemoChapters } from './LandingDemoChapters'
+import { LandingDemoControls } from './LandingDemoControls'
+import {
+  LandingDemoPlayer,
+  type LandingDemoPlayerHandle,
+  type LandingDemoPlaybackState,
+} from './LandingDemoPlayer'
 import { LandingSection } from './LandingSection'
 import { LandingSectionHeading } from './LandingSectionHeading'
 import { LandingReveal } from './LandingReveal'
 
-const DEMO_EMBED_URL = youtubeEmbedUrl(LANDING_LINKS.demo)
+const DEMO_VIDEO_ID = youtubeVideoId(LANDING_LINKS.demo)
+
+type DemoChapter = (typeof LANDING_DEMO.chapters)[number]
+
+const DEFAULT_PLAYBACK_STATE: LandingDemoPlaybackState = {
+  playing: true,
+  muted: true,
+  ready: false,
+}
 
 export function LandingDemo() {
+  const playerRef = useRef<LandingDemoPlayerHandle>(null)
+  const { ref: videoColumnRef, height: videoHeight } = useVideoColumnHeight()
+  const { currentTime, duration, progress, activeIndex, chapters } = useLandingDemoPlayback(playerRef)
+  const [flash, setFlash] = useState<{ label: string; key: number } | null>(null)
+  const [playbackState, setPlaybackState] = useState<LandingDemoPlaybackState>(DEFAULT_PLAYBACK_STATE)
+
+  const handlePlaybackStateChange = useCallback((state: LandingDemoPlaybackState) => {
+    setPlaybackState(state)
+  }, [])
+
+  const handleChapterSelect = (chapter: DemoChapter) => {
+    const player = playerRef.current
+    if (!player) return
+    player.seekTo(chapter.seconds)
+    if (!player.isPlaying()) player.playVideo()
+    setFlash({ label: chapter.label, key: Date.now() })
+  }
+
   return (
     <LandingSection id="demo" className="pt-12 md:pt-16 pb-8 md:pb-12">
       <LandingReveal>
@@ -20,7 +57,7 @@ export function LandingDemo() {
         />
       </LandingReveal>
       <LandingReveal delay={0.08}>
-        <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border bg-surface/40 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.65)]">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-2xl border border-border bg-surface/40 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.65)]">
           <div className="flex items-center gap-3 border-b border-divider bg-landing/80 px-4 py-3">
             <BrowserTrafficLights />
             <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-divider bg-surface/60 px-3 py-1.5">
@@ -31,14 +68,35 @@ export function LandingDemo() {
               </span>
             </div>
           </div>
-          <div className="relative aspect-video bg-black">
-            <iframe
-              src={DEMO_EMBED_URL}
-              title="Polar demo video"
-              className="absolute inset-0 h-full w-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              loading="lazy"
+          <div className="grid items-start lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)]">
+            <div
+              ref={videoColumnRef}
+              className="relative aspect-video w-full self-start bg-black"
+            >
+              {DEMO_VIDEO_ID ? (
+                <LandingDemoPlayer
+                  ref={playerRef}
+                  videoId={DEMO_VIDEO_ID}
+                  onPlaybackStateChange={handlePlaybackStateChange}
+                />
+              ) : null}
+              <LandingDemoChapterFlash label={flash?.label} flashKey={flash?.key} />
+              <LandingDemoControls
+                playing={playbackState.playing}
+                muted={playbackState.muted}
+                ready={playbackState.ready}
+                progress={progress}
+                currentTime={currentTime}
+                duration={duration}
+                chapters={chapters}
+                onTogglePlay={() => playerRef.current?.togglePlay()}
+                onToggleMute={() => playerRef.current?.toggleMute()}
+              />
+            </div>
+            <LandingDemoChapters
+              activeIndex={activeIndex}
+              maxHeight={videoHeight}
+              onChapterSelect={handleChapterSelect}
             />
           </div>
         </div>
